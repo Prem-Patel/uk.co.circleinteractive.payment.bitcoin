@@ -6,12 +6,34 @@
  */
 class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment {
 
-    public static function install() {
+    /**
+     * Machine name of payment processor
+     * @var string
+     * @access protected
+     * @static
+     */
+    protected static $name = 'BitcoinD';
 
-    }
+    /**
+     * Human-readable name of payment processor
+     * @var string
+     * @access protected
+     * @static
+     */
+    protected static $title = 'Bitcoin'; 
 
-    public static function uninstall() {
-        
-    }
-   
+    /**
+     * Billing mode
+     * @var string
+     * @access protected
+     * @static
+     */
+    protected static $mode = 'notify';
+    
+    /**
+     * Do we support recurring or not
+     * @var bool
+     */
+    protected static $is_recur = false;
+ 
 }
