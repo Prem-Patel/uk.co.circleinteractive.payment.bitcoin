@@ -4,7 +4,7 @@
  * Payment processor class for use with locally hosted bitcoind instance
  * @author andyw@circle
  */
-class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment {
+class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
 
     /**
      * Machine name of payment processor
