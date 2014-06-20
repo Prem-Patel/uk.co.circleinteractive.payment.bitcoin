@@ -5,8 +5,10 @@
  * BTC exchange rate
  * @author andyw@circle
  */
-class CRM_Utils_BTCUpdater {
-    
+class Bitcoin_Utils_BTCUpdater extends Bitcoin_Utils_WebClient {
+
+    protected $errors = array(); 
+   
     /**
      * Install the scheduled job
      * @access public
@@ -14,6 +16,10 @@ class CRM_Utils_BTCUpdater {
      */
     public static function createJob() {
         
+        # job should not exist, but check anyway to prevent duplicates
+        if (self::jobExists())
+            return;
+
         try {
 
             civicrm_api3('job', 'create', array(
@@ -92,11 +98,15 @@ class CRM_Utils_BTCUpdater {
             ));
 
         } catch (CiviCRM_API3_Exception $e) {
-            CRM_Core_Error::fatal(ts('Unable to delete scheduled job: %1', array(
+            CRM_Core_Error::fatal(ts('Unable to enable scheduled job: %1', array(
                 1 => $e->getMessage()
             )));
         } 
 
+    }
+
+    public function getErrors() {
+        return $this->errors;
     }
 
     /**
@@ -112,7 +122,7 @@ class CRM_Utils_BTCUpdater {
             return civicrm_api3('job', 'getvalue', array(
                 'api_entity' => 'job',
                 'api_action' => 'update_btc_exchange_rate',
-                'return.id'  => 1
+                'return'     => 'id'
             ));
 
         } catch (CiviCRM_API3_Exception $e) {
@@ -123,8 +133,43 @@ class CRM_Utils_BTCUpdater {
 
     }
 
-    public function run() {
+    protected function jobExists() {
+        
+        try {
 
+            return (bool)civicrm_api3('job', 'getcount', array(
+                'api_entity' => 'job',
+                'api_action' => 'update_btc_exchange_rate'
+            ));
+
+        } catch (CiviCRM_API3_Exception $e) {
+            CRM_Core_Error::fatal(ts('Unable to find scheduled job: %1', array(
+                1 => $e->getMessage()
+            )));
+        }
+
+    }
+
+    /**
+     * Run scheduled job - get BTC exchange rate from blockchain.info
+     * for the default currency, store in civicrm_setting.
+     * @todo support any enabled currencies - currently only supports the subset
+     *       of currencies supported by blockchain.info and only queries default currency
+     */
+    public function run() {
+        
+        if ($response = $this->get(
+            'https://blockchain.info/tobtc',
+            array(
+                'currency' => CRM_Core_Config::singleton()->defaultCurrency
+                'value'    => 1
+            )
+        )) 
+            CRM_Core_BAO_Setting::setItem(
+                $response, 
+                'com.uk.andyw.payment.bitcoin', 
+                'btc_exchange_rate'
+            );
     }
 
 }

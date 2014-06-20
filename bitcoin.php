@@ -20,7 +20,7 @@ function bitcoin_civicrm_disable() {
 
     try {
         # disable scheduled task
-        CRM_Utils_BTCUpdater::disableJob();
+        Bitcoin_Utils_BTCUpdater::disableJob();
 
     } catch (CRM_Core_Exception $e) {
         CRM_Core_Error::fatal(ts('An error occurred disabling extension: %1', array(
@@ -40,13 +40,22 @@ function bitcoin_civicrm_enable() {
 
     try {
         # enable scheduled task
-        CRM_Utils_BTCUpdater::enableJob();
+        Bitcoin_Utils_BTCUpdater::enableJob();
 
     } catch (CRM_Core_Exception $e) {
         CRM_Core_Error::fatal(ts('An error occurred enabling extension: %1', array(
             1 => $e->getMessage()
         )));
     }
+
+    # update exchange rate
+    $updater = new Bitcoin_Utils_BTCUpdater();
+    $updater->run();
+
+    if ($errors = $updater->getErrors())
+        foreach ($errors as $error)
+            CRM_Core_Error::debug_log_message($error, true);  
+
 }
 
 /**
@@ -59,9 +68,9 @@ function bitcoin_civicrm_install() {
     
     try {
         
-        CRM_Utils_BTCUpdater::createJob();    # create scheduled task for updating BTC exchange rate
-        CRM_Core_Payment_BitPay::install();   # install BitPay payment processor
-        CRM_Core_Payment_BitcoinD::install(); # install BitcoinD payment processor
+        Bitcoin_Utils_BTCUpdater::createJob(); # create scheduled task for updating BTC exchange rate
+        CRM_Core_Payment_BitPay::install();    # install BitPay payment processor
+        CRM_Core_Payment_BitcoinD::install();  # install BitcoinD payment processor
     
     } catch (CRM_Core_Exception $e) {
         CRM_Core_Error::fatal(ts('An error occurred installing extension: %1', array(
@@ -81,7 +90,7 @@ function bitcoin_civicrm_uninstall() {
 
     try {
         
-        CRM_Utils_BTCUpdater::deleteJob();      # delete scheduled task for updating BTC exchange rate
+        Bitcoin_Utils_BTCUpdater::deleteJob();  # delete scheduled task for updating BTC exchange rate
         CRM_Core_Payment_BitPay::uninstall();   # uninstall BitPay payment processor
         CRM_Core_Payment_BitcoinD::uninstall(); # uninstall BitcoinD payment processor
     
@@ -96,9 +105,9 @@ function bitcoin_civicrm_uninstall() {
 /**
  * Job api callback
  */
-function civicrm_api3_job_update_btc_exchange_rate($params) {
+function civicrm_api3_job_update_btc_exchange_rate() {
     
-    $updater = new CRM_Utils_BTCUpdater();
+    $updater = new Bitcoin_Utils_BTCUpdater();
     $updater->run();
 
     if ($errors = $updater->getErrors())
