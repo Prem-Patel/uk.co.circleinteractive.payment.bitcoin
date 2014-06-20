@@ -29,6 +29,9 @@ class Bitcoin_Utils_WebClient_FOpen implements Bitcoin_Utils_WebClient_Interface
      */
     public function get($url, $params = array()) {
         
+        if ($params)
+            $url .= '?' . implode('&', $params);
+
         return file_get_contents(
             $url,
             stream_context_create(array('http'=>
