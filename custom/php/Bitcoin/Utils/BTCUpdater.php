@@ -158,18 +158,16 @@ class Bitcoin_Utils_BTCUpdater extends Bitcoin_Utils_WebClient {
      */
     public function run() {
         
-        if ($response = $this->get(
-            'https://blockchain.info/tobtc',
-            array(
-                'currency' => CRM_Core_Config::singleton()->defaultCurrency
-                'value'    => 1
-            )
-        )) 
+        if ($response = $this->get('https://blockchain.info/ticker')) {
+            watchdog('andyw', 'response = <pre>' . print_r(json_decode($response), true) . '</pre>');
+            /*
             CRM_Core_BAO_Setting::setItem(
                 $response, 
                 'com.uk.andyw.payment.bitcoin', 
                 'btc_exchange_rate'
             );
+            */
+        }
     }
 
 }

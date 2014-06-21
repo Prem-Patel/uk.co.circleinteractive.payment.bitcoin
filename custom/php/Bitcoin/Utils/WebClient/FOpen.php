@@ -34,7 +34,7 @@ class Bitcoin_Utils_WebClient_FOpen implements Bitcoin_Utils_WebClient_Interface
 
         return file_get_contents(
             $url,
-            stream_context_create(array('http'=>
+            stream_context_create(array('http' =>
                 array(
                     'timeout' => $this->controller->timeout
                 )
