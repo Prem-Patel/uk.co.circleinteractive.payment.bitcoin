@@ -2,7 +2,7 @@
 
 class Bitcoin_Utils_WebClient_FOpen implements Bitcoin_Utils_WebClient_Interface {
 
-    protected $controller;
+    public $controller;
 
     /**
      * Constructor
@@ -32,10 +32,9 @@ class Bitcoin_Utils_WebClient_FOpen implements Bitcoin_Utils_WebClient_Interface
         if ($params)
             $url .= '?' . implode('&', $params);
 
-        return file_get_contents(
-            $url,
-            stream_context_create(array('http' =>
-                array(
+        return file_get_contents($url, false,
+            stream_context_create(array(
+                'http' => array(
                     'timeout' => $this->controller->timeout
                 )
             ))

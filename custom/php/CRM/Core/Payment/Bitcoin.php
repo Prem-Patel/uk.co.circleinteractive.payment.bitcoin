@@ -35,7 +35,7 @@ abstract class CRM_Core_Payment_Bitcoin extends CRM_Core_Payment {
     protected static function getTypeID() {
         
         # get name of the inheriting child class
-        $child = get_called_class();
+        $child = self::className();
 
         try {
 
@@ -58,7 +58,7 @@ abstract class CRM_Core_Payment_Bitcoin extends CRM_Core_Payment {
         if (!self::isInstalled()) {
 
             # get name of the inheriting child class
-            $child = get_called_class();
+            $child = self::className();
 
             try {
 
@@ -80,12 +80,16 @@ abstract class CRM_Core_Payment_Bitcoin extends CRM_Core_Payment {
 
     }
 
+    protected static function className() {
+        return str_replace('CRM_Core_', '', get_called_class());
+    }
+
     protected static function isInstalled() {
 
         try {
 
             return (bool)civicrm_api3('PaymentProcessorType', 'getcount', array(
-                'class_name' => get_called_class()
+                'class_name' => self::className()
             ));
 
         } catch (CiviCRM_API3_Exception $e) {

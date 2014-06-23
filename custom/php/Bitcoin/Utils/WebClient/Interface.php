@@ -15,7 +15,7 @@ interface Bitcoin_Utils_WebClient_Interface {
      * @return string         response body
      * @access public
      */
-	public function get($url);
+	public function get($url, $params = array());
 
 	/**
      * Perform POST request
@@ -24,6 +24,6 @@ interface Bitcoin_Utils_WebClient_Interface {
      * @return string         response body
      * @access public
      */
-	public function post($url);
+	public function post($url, $params);
 
 }

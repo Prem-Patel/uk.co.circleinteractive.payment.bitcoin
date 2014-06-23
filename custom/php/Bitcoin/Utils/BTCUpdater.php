@@ -7,7 +7,7 @@
  */
 class Bitcoin_Utils_BTCUpdater extends Bitcoin_Utils_WebClient {
 
-    protected $errors = array(); 
+    public $errors = array(); 
    
     /**
      * Install the scheduled job
@@ -16,7 +16,7 @@ class Bitcoin_Utils_BTCUpdater extends Bitcoin_Utils_WebClient {
      */
     public static function createJob() {
         
-        # job should not exist, but check anyway to prevent duplicates
+        # job should not exist, but check anyway
         if (self::jobExists())
             return;
 
@@ -105,6 +105,10 @@ class Bitcoin_Utils_BTCUpdater extends Bitcoin_Utils_WebClient {
 
     }
 
+    protected function error($message) {
+        $this->errors[] = $error;
+    }
+
     public function getErrors() {
         return $this->errors;
     }
@@ -159,14 +163,23 @@ class Bitcoin_Utils_BTCUpdater extends Bitcoin_Utils_WebClient {
     public function run() {
         
         if ($response = $this->get('https://blockchain.info/ticker')) {
-            watchdog('andyw', 'response = <pre>' . print_r(json_decode($response), true) . '</pre>');
-            /*
-            CRM_Core_BAO_Setting::setItem(
-                $response, 
-                'com.uk.andyw.payment.bitcoin', 
-                'btc_exchange_rate'
-            );
-            */
+            
+            $exchange_rate = json_decode($response);
+            $currency      = CRM_Core_Config::singleton()->defaultCurrency; 
+
+            # check if we have exchange rates for the default currency,
+            # if not, raise an error
+            if (!isset($exchange_rate->$currency))
+                return $this->error(ts(
+                    'Unsupported currency: %1 - cannot update BTC exchange rate.',
+                    array(
+                        1 => $currency
+                    )
+                ));
+
+            # store in civicrm_setting if no errors
+            bitcoin_setting('btc_exchange_rate', $exchange_rate->$currency->last);
+
         }
     }
 

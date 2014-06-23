@@ -2,7 +2,7 @@
 
 class Bitcoin_Utils_WebClient_Curl implements Bitcoin_Utils_WebClient_Interface {
 
-    protected $controller;
+    public $controller;
 
     /**
      * Constructor
@@ -29,7 +29,7 @@ class Bitcoin_Utils_WebClient_Curl implements Bitcoin_Utils_WebClient_Interface 
      * @return string         response body
      * @access public
      */
-    public function post($url) {
+    public function post($url, $params) {
         
     }
 
