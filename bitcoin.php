@@ -7,6 +7,39 @@
  */
 
 /**
+ * Implementation of hook_civicrm_buildForm
+ */
+function bitcoin_civicrm_buildForm($formName, &$form) {
+    
+    switch ($formName) {
+        
+        # on event registration pages + contribution pages
+        case 'CRM_Event_Form_Registration_Register':
+        # todo: contribution pages
+
+            $extension_name = basename(__DIR__);
+
+            # add styles
+            CRM_Core_Resources::singleton()->addStyleFile(
+                $extension_name, 
+                'custom/css/paymentBlock.css',
+                CRM_Core_Resources::DEFAULT_WEIGHT,
+                'html-header'
+            );
+
+            # add javascript
+            CRM_Core_Resources::singleton()->addScriptFile(
+                $extension_name,  
+                'custom/js/paymentBlock.js' 
+            );
+
+            break; 
+    
+    }
+
+}
+
+/**
  * Implementation of hook_civicrm_config
  */
 function bitcoin_civicrm_config(&$config) {
@@ -147,7 +180,15 @@ function bitcoin_init() {
     
     # initialize include path
     set_include_path(__DIR__ . '/custom/php/' . PATH_SEPARATOR . get_include_path());
+
+    # initialize template path
+    $templates = &CRM_Core_Smarty::singleton()->template_dir;
     
+    if (!is_array($templates))
+        $templates = array($templates);
+    
+    array_unshift($templates, __DIR__ . '/custom/templates');
+
     # register autoloader for owned classes
     spl_autoload_register(function($class) {
         if (strpos($class, 'Bitcoin_') === 0)

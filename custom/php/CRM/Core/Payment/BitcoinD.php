@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Payment processor class for use with locally hosted bitcoind instance
+ * Payment processor class for use with bitcoind instance
  * @author andyw@circle
  */
 class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
@@ -28,12 +28,14 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
      * @access protected
      * @static
      */
-    protected static $mode = 'notify';
+    protected static $mode = 'form';
     
     /**
      * Do we support recurring or not
      * @var bool
      */
     protected static $is_recur = false;
+
+
  
 }
