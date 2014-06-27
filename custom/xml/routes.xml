@@ -1,0 +1,18 @@
+<menu>
+  <item>
+    <path>civicrm/payment/bitcoind/ajax</path>
+    <title>Bitcoin Ajax</title>
+    <page_callback>CRM_Core_Payment_BitcoinD_Ajax</page_callback>
+    <page_arguments></page_arguments>
+    <access_arguments>make online contributions</access_arguments>
+    <adminGroup>CiviContribute</adminGroup>
+  </item>
+  <item>
+    <path>civicrm/payment/bitcoind/qrcode</path>
+    <title>Bitcoin QR Code</title>
+    <page_callback>CRM_Core_Payment_BitcoinD_QRCode</page_callback>
+    <page_arguments></page_arguments>
+    <access_arguments>make online contributions</access_arguments>
+    <adminGroup>CiviContribute</adminGroup>
+  </item>
+</menu>

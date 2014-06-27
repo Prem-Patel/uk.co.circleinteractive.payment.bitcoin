@@ -21,7 +21,7 @@ abstract class CRM_Core_Payment_Bitcoin extends CRM_Core_Payment {
                     
     }
 
-    public static function &singleton($mode, &$paymentProcessor) {
+    public static function &singleton($mode, &$paymentProcessor, &$paymentForm = NULL, $force = false) {
         
         $processorName = $paymentProcessor['name'];
         if (is_null(self::$_singleton[$processorName])) {

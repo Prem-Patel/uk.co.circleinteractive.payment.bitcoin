@@ -17,21 +17,30 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
         case 'CRM_Event_Form_Registration_Register':
         # todo: contribution pages
 
+            # todo: check if this event uses BitcoinD processor and if so, do this ...
             $extension_name = basename(__DIR__);
+            $resources      = CRM_Core_Resources::singleton();
 
             # add styles
-            CRM_Core_Resources::singleton()->addStyleFile(
+            $resources->addStyleFile(
                 $extension_name, 
                 'custom/css/paymentBlock.css',
                 CRM_Core_Resources::DEFAULT_WEIGHT,
                 'html-header'
             );
 
+            # load underscore.js on versions lower than 4.5 - think 4.5 includes lodash by default, but need to check
+            if (bitcoin_crm_version() < 4.5)
+                $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', FALSE);
+
             # add javascript
-            CRM_Core_Resources::singleton()->addScriptFile(
-                $extension_name,  
-                'custom/js/paymentBlock.js' 
-            );
+            $resources->addScriptFile($extension_name, 'custom/js/paymentBlock.js');
+
+            # add settings
+            $resources->addSetting(array(
+                'btc_processor_ids' => bitcoin_get_processor_ids('BitcoinD'),
+                'btc_exchange_rate' => bitcoin_setting('btc_exchange_rate')
+            ));
 
             break; 
     
@@ -98,6 +107,13 @@ function bitcoin_civicrm_enable() {
 }
 
 /**
+ * Implementation of hook_civicrm_xmlMenu
+ */
+function bitcoin_civicrm_xmlMenu(&$files) {
+    $files[] = __DIR__ . '/custom/xml/routes.xml';
+}
+
+/**
  * Implementation of hook_civicrm_install
  */
 function bitcoin_civicrm_install() {
@@ -141,26 +157,44 @@ function bitcoin_civicrm_uninstall() {
 
 }
 
+
+
 /**
- * Job api callback
+ * Get Civi version as 1-decimal-place float - eg: 4.4
+ * @return float
  */
-function civicrm_api3_job_update_btc_exchange_rate() {
-    
-    $updater = new Bitcoin_Utils_BTCUpdater();
-    $updater->run();
+function bitcoin_crm_version() {
+    $version = explode('.', ereg_replace('[^0-9\.]','', CRM_Utils_System::version()));
+    return (float)($version[0] . '.' . $version[1]);   
+}
 
-    if ($errors = $updater->getErrors())
-        return civicrm_api3_create_error(
-            ts('Unable to update BTC exchange rate: %1', array(
-                1 => "\n" . implode("\n", $errors)
-            ))
-        );
+/**
+ * Get payment processor instance ids for the payment processor specified by $type
+ * @param  $type optional type, defaults to 'BitcoinD'
+ * @return array an array of processor ids
+ */
+function bitcoin_get_processor_ids($type = 'BitcoinD') {
 
-    return civicrm_api3_create_success(
-        ts('Succesfully updated BTC exchange rate at %1', array(
-            1 => date('Y-m-d H:i:s')
-        ))
-    );
+    $ids = array();
+
+    try {
+
+        $result = civicrm_api3('PaymentProcessor', 'get', array(
+            'class_name' => 'Payment_' . $type,
+            'return.id'  => 1
+        ));
+
+    } catch (CiviCRM_API3_Exception $e) {
+        CRM_Core_Error::fatal(ts('Unable to get payment processor ids for class_name Payment_%1: %2', array(
+            1 => $type,
+            2 => $e->getMessage()
+        )));
+    }
+
+    foreach ($result['values'] as $processor)
+        $ids[] = $processor['id'];
+
+    return $ids;
 
 }
 
@@ -209,4 +243,27 @@ function bitcoin_setting($key, $value = null) {
     if ($value)
         return CRM_Core_BAO_Setting::setItem($value, basename(__DIR__), $key);
     return CRM_Core_BAO_Setting::getItem(basename(__DIR__), $key);
+}
+
+/**
+ * Job api callback
+ */
+function civicrm_api3_job_update_btc_exchange_rate() {
+    
+    $updater = new Bitcoin_Utils_BTCUpdater();
+    $updater->run();
+
+    if ($errors = $updater->getErrors())
+        return civicrm_api3_create_error(
+            ts('Unable to update BTC exchange rate: %1', array(
+                1 => "\n" . implode("\n", $errors)
+            ))
+        );
+
+    return civicrm_api3_create_success(
+        ts('Succesfully updated BTC exchange rate at %1', array(
+            1 => date('Y-m-d H:i:s')
+        ))
+    );
+
 }

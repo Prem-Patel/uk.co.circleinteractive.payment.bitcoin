@@ -1,1 +1,30 @@
 /* css for payment block */
+
+.bitcoin_info-group .countdown {
+	background:#ffc;
+	border:1px solid #ff6;
+	padding:5px 8px;
+	border-radius:5px;
+	float:left;
+}
+
+.bitcoin_info-group .info {
+	float:left;
+	clear:left;
+	text-align:center;
+	padding:12px 8px;
+	font-size:1.4em;
+	color:#666;
+	line-height:1.5em;
+}
+
+.bitcoin_info-group .btc-amount {
+	font-size:1.8em;
+	color:#333;
+}
+
+.bitcoin_info-group .btc-address {
+	font-weight:bold;
+	color:#0f7171;
+	font-size:0.8em;
+}
