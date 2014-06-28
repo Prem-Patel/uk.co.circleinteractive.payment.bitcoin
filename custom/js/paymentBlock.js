@@ -11,9 +11,9 @@
             // if the selected id is not a BitcoinD id then ..
             if (!_.contains(CRM.btc_processor_ids, cj(this).val())) {
                 
-                // if the payment block exists on the page, remove it
+                // if the payment block exists on the page, hide it
                 if (cj('#bitcoin-payment-block').length)
-                    cj('#bitcoin-payment-block').remove();
+                    cj('#bitcoin-payment-block').hide();
                 
                 // that is all
                 return;
@@ -23,11 +23,27 @@
             // selected id is a BitcoinD processor id ..
             // if the payment block is not already on the page, add it
             if (!cj('#bitcoin-payment-block').length) {
-                cj('fieldset.payment_options-group').after(
-                    _.template(
-                        cj('#bitcoin-payment-template').html()
-                    )
-                );
+
+                var qfKey = cj('form#Register input[name=qfKey]').val();
+                var data  = {
+                    op: 'initialize'
+                };
+                
+                cj.post('/civicrm/payment/bitcoind/ajax?qfKey=' + qfKey, data, function(response) {
+
+                    cj('fieldset.payment_options-group').after(
+                        _.template(
+                            cj('#bitcoin-payment-template').html(), {
+                                address: response.address,
+                                qr_code: response.qr_code
+                            }
+                        )
+                    );
+        
+                });
+
+            } else {
+                cj('#bitcoin-payment-block').show();
             }
 
         });

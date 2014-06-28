@@ -27,7 +27,11 @@ class Bitcoin_Utils_QRCode_Controller extends CRM_Core_Controller {
             $image = new TCPDF2DBarcode($param['qr'], 'QRCODE,H');
             
             header('Content-type: image/png');
-            echo $image->getBarcodePNG(4, 4);
+            
+            echo $image->getBarcodePNG(
+                isset($param['w']) ? $param['w'] : 3.5, 
+                isset($param['h']) ? $param['h'] : 3.5
+            );
 
         }
 
@@ -35,7 +39,7 @@ class Bitcoin_Utils_QRCode_Controller extends CRM_Core_Controller {
 
     }
 
-    public function run($newArgs, $pageArgs) {
+    public function run() {
         return $this->request($_GET);
     }
 

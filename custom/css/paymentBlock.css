@@ -18,6 +18,15 @@
 	line-height:1.5em;
 }
 
+.bitcoin_info-group .payment-details {
+	float:left;
+	margin-right:18px;
+}
+
+.bitcoin_info-group .qr-code {
+	float:left;
+}
+
 .bitcoin_info-group .btc-amount {
 	font-size:1.8em;
 	color:#333;
