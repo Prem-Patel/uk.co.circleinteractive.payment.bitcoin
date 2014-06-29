@@ -21,9 +21,17 @@ class Bitcoin_Utils_Ajax_Controller extends CRM_Core_Controller {
      */
     private function request(&$param) {
 
+        $address     = 'mmmHm2bJJfSF5RYxobfk8CDG4gDHHNHzVr';
+        $payment_uri = 'bitcoin:mmmHm2bJJfSF5RYxobfk8CDG4gDHHNHzVr?r=http%3A%2F%2Fbitcoincore.org%2F%7Egavin%2Ff.php%3Fh%3D974226354377d2751007860e3e74c15d&amount=0.0001';
+        $qr_code     = Bitcoin_Utils_QRCode::getInline($payment_uri);
+
         echo json_encode(array(
-            'status' => 'ok'
+            'status'  => 'ok',
+            'address' => $address,
+            'qr_code' => $qr_code, 
+            'pay_uri' => $payment_uri
         ));
+
         CRM_Utils_System::civiExit();
         
     }
