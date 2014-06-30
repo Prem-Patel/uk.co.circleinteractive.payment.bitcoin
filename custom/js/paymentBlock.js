@@ -36,7 +36,7 @@
                             cj('#bitcoin-payment-template').html(), {
                                 address: response.address,
                                 qr_code: response.qr_code,
-                                pay_url: response.pay_url
+                                pay_uri: response.pay_uri
                             }
                         )
                     );

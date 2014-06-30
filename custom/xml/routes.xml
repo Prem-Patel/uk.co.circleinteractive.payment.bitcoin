@@ -1,7 +1,7 @@
 <menu>
   <item>
-    <path>civicrm/payment/bitcoind/ajax</path>
-    <title>BitcoinD Ajax</title>
+    <path>civicrm/payment/bitcoin/ajax</path>
+    <title>Bitcoin Ajax</title>
     <page_callback>Bitcoin_Utils_Ajax_Controller</page_callback>
     <page_arguments></page_arguments>
     <access_arguments>make online contributions</access_arguments>

@@ -16,11 +16,11 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
         # on event registration pages + contribution pages
         case 'CRM_Event_Form_Registration_Register':
         # todo: contribution pages
-
+            //watchdog('andyw', 'form = <pre>' . print_r($form, true) . '</pre>');
             # todo: check if this event uses BitcoinD processor and if so, do this ...
             $extension_name = basename(__DIR__);
             $resources      = CRM_Core_Resources::singleton();
-
+            /*
             # add styles
             $resources->addStyleFile(
                 $extension_name, 
@@ -28,18 +28,21 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
                 CRM_Core_Resources::DEFAULT_WEIGHT,
                 'html-header'
             );
+            */
 
             # load underscore.js on versions lower than 4.5 - think 4.5 includes lodash by default, but need to check
             if (bitcoin_crm_version() < 4.5)
-                $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', FALSE);
-
+                $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
+            
             # add javascript
-            $resources->addScriptFile($extension_name, 'custom/js/paymentBlock.js');
+            $resources->addScriptFile($extension_name, 'custom/js/convertPrices.js');
 
             # add settings
             $resources->addSetting(array(
                 'btc_processor_ids' => bitcoin_get_processor_ids('BitcoinD'),
-                'btc_exchange_rate' => bitcoin_setting('btc_exchange_rate')
+                'btc_exchange_rate' => bitcoin_get_exchange_rate(
+                    bitcoin_get_currency('event', $form->_eventId)
+                )
             ));
 
             break; 
@@ -168,9 +171,33 @@ function bitcoin_crm_version() {
     return (float)($version[0] . '.' . $version[1]);   
 }
 
+function bitcoin_get_currency($entity_type, $entity_id) {
+
+    try {
+
+        return civicrm_api3($entity_type, 'getvalue', array(
+            'id'     => $entity_id,
+            'return' => 'currency',
+        ));
+
+    } catch (CiviCRM_API3_Exception $e) {
+        CRM_Core_Error::fatal(ts('Unable to get currency for %1 id %2: %3', array(
+            1 => $entity_type,
+            2 => $entity_id,
+            3 => $e->getMessage()
+        )));
+    }
+
+}
+
+function bitcoin_get_exchange_rate($currency) {
+    if ($exchange_rates = bitcoin_setting('btc_exchange_rate') and isset($exchange_rates->$currency))
+        return $exchange_rates->$currency->last;
+}
+
 /**
  * Get payment processor instance ids for the payment processor specified by $type
- * @param  $type optional type, defaults to 'BitcoinD'
+ * @param  $type optional type, defaults to BitcoinD
  * @return array an array of processor ids
  */
 function bitcoin_get_processor_ids($type = 'BitcoinD') {

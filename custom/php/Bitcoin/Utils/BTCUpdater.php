@@ -155,32 +155,13 @@ class Bitcoin_Utils_BTCUpdater extends Bitcoin_Utils_WebClient {
     }
 
     /**
-     * Run scheduled job - get BTC exchange rate from blockchain.info
-     * for the default currency, store in civicrm_setting.
-     * @todo support any enabled currencies - currently only supports the subset
-     *       of currencies supported by blockchain.info and only queries default currency
+     * Run scheduled job - get BTC exchange rate(s) from blockchain.info
      */
     public function run() {
-        
-        if ($response = $this->get('https://blockchain.info/ticker')) {
-            
-            $exchange_rate = json_decode($response);
-            $currency      = CRM_Core_Config::singleton()->defaultCurrency; 
 
-            # check if we have exchange rates for the default currency,
-            # if not, raise an error
-            if (!isset($exchange_rate->$currency))
-                return $this->error(ts(
-                    'Unsupported currency: %1 - cannot update BTC exchange rate.',
-                    array(
-                        1 => $currency
-                    )
-                ));
+        if ($response = $this->get('https://blockchain.info/ticker'))
+            bitcoin_setting('btc_exchange_rate', json_decode($response));
 
-            # store in civicrm_setting if no errors
-            bitcoin_setting('btc_exchange_rate', $exchange_rate->$currency->last);
-
-        }
     }
 
 }
