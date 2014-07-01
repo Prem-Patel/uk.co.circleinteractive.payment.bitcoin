@@ -42,7 +42,7 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
             # todo: check if this event uses BitcoinD processor and if so, do this ...
             $resources = CRM_Core_Resources::singleton();
 
-            # load underscore.js on versions lower than 4.5 - think 4.5 includes lodash by default, but need to check
+            # load underscore.js on versions lower than 4.5
             if (bitcoin_crm_version() < 4.5)
                 $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
 
