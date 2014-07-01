@@ -7,25 +7,25 @@
     // doc load ..
     cj(function() {
     
-        cj('input[name="payment_processor"]').change(function() {
-
-            // if the selected id is not a BitcoinD id then ..
-            if (!_.contains(CRM.btc_processor_ids, cj(this).val()))
-                cj('.crm-price-amount-btc').fadeOut();
-            else
-                cj('.crm-price-amount-btc').fadeIn();
-
-        });
-
+        // for each price option
         cj('.crm-price-amount-amount').each(function() {
             
-            price     = parseFloat(cj(this).html().replace(/[^0-9\.]/g, ''));
-            btc_price = (price / CRM.btc_exchange_rate).toFixed(4);
-
-            cj(this).after('<span class="crm-price-amount-btc"> (' + btc_price + ' BTC) </span>'); 
+            // convert to btc and display next to current price option
+            cj(this).after(_.template(
+                '<span class="crm-price-amount-btc" style="<%=style %>"> (<%=btc_price %> BTC) </span>', {
+                    // if a non-bitcoin processor currently selected, set display:none
+                    style:     !_.contains(CRM.btc_processor_ids, cj('input[name="payment_processor"]:checked').val()) ? 'display:none' : '',
+                    btc_price: (parseFloat(cj(this).html().replace(/[^0-9\.]/g, '')) / CRM.btc_exchange_rate).toFixed(4)
+                }
+            ));
         
         });
 
+        // show/hide BTC prices whenever a bitcoin processor is selected/deselected
+        cj('input[name="payment_processor"]').change(function() {
+            var operation = !_.contains(CRM.btc_processor_ids, cj(this).val()) ? 'fadeOut' : 'fadeIn';
+            cj('.crm-price-amount-btc')[operation]();
+        });
 
     });
 

@@ -16,26 +16,16 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
         # on event registration pages + contribution pages
         case 'CRM_Event_Form_Registration_Register':
         # todo: contribution pages
-            //watchdog('andyw', 'form = <pre>' . print_r($form, true) . '</pre>');
+            
             # todo: check if this event uses BitcoinD processor and if so, do this ...
-            $extension_name = basename(__DIR__);
-            $resources      = CRM_Core_Resources::singleton();
-            /*
-            # add styles
-            $resources->addStyleFile(
-                $extension_name, 
-                'custom/css/paymentBlock.css',
-                CRM_Core_Resources::DEFAULT_WEIGHT,
-                'html-header'
-            );
-            */
+            $resources = CRM_Core_Resources::singleton();
 
             # load underscore.js on versions lower than 4.5 - think 4.5 includes lodash by default, but need to check
             if (bitcoin_crm_version() < 4.5)
                 $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
             
             # add javascript
-            $resources->addScriptFile($extension_name, 'custom/js/convertPrices.js');
+            $resources->addScriptFile(basename(__DIR__), 'custom/js/convertPrices.js');
 
             # add settings
             $resources->addSetting(array(
@@ -47,6 +37,32 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
 
             break; 
     
+        case 'CRM_Event_Form_Registration_Confirm':
+
+            # todo: check if this event uses BitcoinD processor and if so, do this ...
+            $resources = CRM_Core_Resources::singleton();
+
+            # load underscore.js on versions lower than 4.5 - think 4.5 includes lodash by default, but need to check
+            if (bitcoin_crm_version() < 4.5)
+                $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
+
+            # add javascript
+            $resources->addScriptFile(basename(__DIR__), 'custom/js/confirm.js');
+
+            # add settings
+            $resources->addSetting(array(
+                'is_bitcoin' => (int)in_array(
+                    $form->_paymentProcessor['id'],
+                    bitcoin_get_processor_ids('BitcoinD') +
+                    bitcoin_get_processor_ids('Bitpay')
+                ),
+                'btc_exchange_rate' => bitcoin_get_exchange_rate(
+                    bitcoin_get_currency('event', $form->_values['event']['id'])
+                )
+            ));
+
+            break;
+
     }
 
 }
