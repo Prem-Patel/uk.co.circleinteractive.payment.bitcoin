@@ -41,9 +41,34 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
         
         # todo: probably initialize the transaction or something
         # then we need to pass that data through to the next page somehow, prb using $_SESSION
+        
+        # todo: get new address
+        $new_address = '15amaYtP47Nmf00m1yFNtuKGsmKQUwTJX';
+        $transaction = &$_SESSION['bitcoin_trxn'];
 
+        $url   = ($component == 'event' ? 'civicrm/event/register' : 'civicrm/contribute/transact');
+        $query = "_qf_ThankYou_display=1&qfKey=" . $params['qfKey'];
+        
+        $transaction->thankyou_url = CRM_Utils_System::url($url, $query, true, null, false, true);
+        $transaction->pay_address  = $new_address;
+        
+        # update contribution record, setting the trxn_id to the pay address
+        try {
+           
+            civicrm_api3('contribution', 'create', array(
+                'id'      => $params['contributionID'],
+                'trxn_id' => $transaction->pay_address
+            ));
+
+        } catch (CiviCRM_API3_Exception $e) {
+            CRM_Core_Error::fatal(ts('Unable to update contribution record: %1', array(
+                1 => $e->getMessage()
+            )));
+        } 
+
+        # redirect to payment page
         CRM_Utils_System::redirect(
-            CRM_Utils_System::url('civicrm/payment/bitcoin', '', true, null, false, true, false)
+            CRM_Utils_System::url('civicrm/payment/bitcoin', null, true, null, false, true, false)
         );
     }
 

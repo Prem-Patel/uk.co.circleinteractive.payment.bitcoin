@@ -17,10 +17,12 @@ class Bitcoin_Utils_QRCode {
     public static function getInline($qr_code, $width = 3.5, $height = 3.5) {
             
         require_once 'packages/tcpdf/tcpdf_barcodes_2d.php';
-
         $image = new TCPDF2DBarcode($qr_code, 'QRCODE,H');
-        $data  = base64_encode($image->getBarcodePNG($width, $height));
-        
+
+        ob_start();
+        $image->getBarcodePNG($width, $height);
+        $data = base64_encode(ob_get_clean());
+
         return 'data:image/png;charset=utf8;base64,' . $data;
 
     }

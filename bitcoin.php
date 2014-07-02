@@ -25,7 +25,7 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
                 $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
             
             # add javascript
-            $resources->addScriptFile(basename(__DIR__), 'custom/js/convertPrices.js');
+            $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/convertPrices.js');
 
             # add settings
             $resources->addSetting(array(
@@ -39,27 +39,38 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
     
         case 'CRM_Event_Form_Registration_Confirm':
 
-            # todo: check if this event uses BitcoinD processor and if so, do this ...
-            $resources = CRM_Core_Resources::singleton();
+            if (in_array(
+                $form->_paymentProcessor['id'],
+                bitcoin_get_processor_ids('BitcoinD') +
+                bitcoin_get_processor_ids('Bitpay')
+            )) {
 
-            # load underscore.js on versions lower than 4.5
-            if (bitcoin_crm_version() < 4.5)
-                $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
+                $resources = CRM_Core_Resources::singleton();
 
-            # add javascript
-            $resources->addScriptFile(basename(__DIR__), 'custom/js/confirm.js');
+                # load underscore.js on versions lower than 4.5
+                if (bitcoin_crm_version() < 4.5)
+                    $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
 
-            # add settings
-            $resources->addSetting(array(
-                'is_bitcoin' => (int)in_array(
-                    $form->_paymentProcessor['id'],
-                    bitcoin_get_processor_ids('BitcoinD') +
-                    bitcoin_get_processor_ids('Bitpay')
-                ),
-                'btc_exchange_rate' => bitcoin_get_exchange_rate(
+                # add javascript
+                $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/confirm.js');
+
+                # add settings
+                $exchange_rate = bitcoin_get_exchange_rate(
                     bitcoin_get_currency('event', $form->_values['event']['id'])
-                )
-            ));
+                );
+
+                $resources->addSetting(array(
+                    'btc_exchange_rate' => $exchange_rate
+                ));
+
+                # create a new session object for the transaction and store price - we want to make
+                # make sure the price displayed to the user is the price they get charged by the 
+                # payment processor (in case exchange rate gets updated between page render and submission)
+                $_SESSION['bitcoin_trxn'] = (object)array(
+                    'amount' => round($form->_totalAmount / $exchange_rate, 4)
+                );
+
+            }
 
             break;
 
@@ -185,6 +196,10 @@ function bitcoin_civicrm_uninstall() {
 function bitcoin_crm_version() {
     $version = explode('.', ereg_replace('[^0-9\.]','', CRM_Utils_System::version()));
     return (float)($version[0] . '.' . $version[1]);   
+}
+
+function bitcoin_extension_name() {
+    return basename(__DIR__);
 }
 
 function bitcoin_get_currency($entity_type, $entity_id) {

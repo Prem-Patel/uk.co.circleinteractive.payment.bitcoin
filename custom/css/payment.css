@@ -1,6 +1,6 @@
 /* css for payment block */
 
-.bitcoin_info-group .countdown {
+#bitcoin-payment-block .countdown {
 	background:#ffc;
 	border:1px solid #ff6;
 	padding:5px 8px;
@@ -8,7 +8,7 @@
 	float:left;
 }
 
-.bitcoin_info-group .info {
+#bitcoin-payment-block .info {
 	float:left;
 	clear:left;
 	text-align:center;
@@ -18,21 +18,21 @@
 	line-height:1.5em;
 }
 
-.bitcoin_info-group .payment-details {
+#bitcoin-payment-block .payment-details {
 	float:left;
 	margin-right:18px;
 }
 
-.bitcoin_info-group .qr-code {
+#bitcoin-payment-block .qr-code {
 	float:left;
 }
 
-.bitcoin_info-group .btc-amount {
+#bitcoin-payment-block .btc-amount {
 	font-size:1.8em;
 	color:#333;
 }
 
-.bitcoin_info-group .btc-address {
+#bitcoin-payment-block .btc-address {
 	font-weight:bold;
 	color:#0f7171;
 	font-size:0.8em;
