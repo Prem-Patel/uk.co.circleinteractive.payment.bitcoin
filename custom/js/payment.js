@@ -17,7 +17,7 @@
             
             if (!timer) {
                 alert('Out of time');
-                clearInterval(coundown);
+                clearInterval(countdown);
             }
 
         }, 1000);

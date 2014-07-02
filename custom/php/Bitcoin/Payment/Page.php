@@ -7,12 +7,12 @@
  */
 class Bitcoin_Payment_Page extends CRM_Core_Page {
 
-	/**
-	 * Page run - add resources, assign templates vars, then call parent run method
-	 */
-	public function run() {
-		
-		$resources = CRM_Core_Resources::singleton();
+    /**
+     * Page run - add resources, assign templates vars, then call parent run method
+     */
+    public function run() {
+        
+        $resources = CRM_Core_Resources::singleton();
 
         # add styles
         $resources->addStyleFile(
@@ -32,8 +32,8 @@ class Bitcoin_Payment_Page extends CRM_Core_Page {
         $this->assign('thankyou_url', $transaction->thankyou_url);
         $this->assign('amount',       $transaction->amount);
            
-		return parent::run();
-	
-	}
+        return parent::run();
+    
+    }
 
 };
