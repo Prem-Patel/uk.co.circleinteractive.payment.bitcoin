@@ -7,7 +7,8 @@
  */
 abstract class CRM_Core_Payment_Bitcoin extends CRM_Core_Payment {
 
-    static protected $_singleton = null;
+    static protected $_singleton    = null;
+    static protected $installParams = array();
 
     /**
      * Constructor
@@ -82,7 +83,7 @@ abstract class CRM_Core_Payment_Bitcoin extends CRM_Core_Payment {
 
             try {
 
-                civicrm_api3('PaymentProcessorType', 'create', array(
+                civicrm_api3('PaymentProcessorType', 'create', self::$installParams + array(
                     'name'         => $child::$name,
                     'title'        => $child::$title,
                     'class_name'   => self::className(),

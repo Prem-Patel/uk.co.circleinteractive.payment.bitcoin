@@ -16,35 +16,35 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
         # on event registration pages + contribution pages
         case 'CRM_Event_Form_Registration_Register':
         # todo: contribution pages
-            
-            # todo: check if this event uses BitcoinD processor and if so, do this ...
-            $resources = CRM_Core_Resources::singleton();
+                
+            # check if this event uses BitcoinD processor and if so, do this ...
+            if (bitcoin_processor_enabled('event', $form->_eventId)) {
 
-            # load underscore.js on versions lower than 4.5 - think 4.5 includes lodash by default, but need to check
-            if (bitcoin_crm_version() < 4.5)
-                $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
-            
-            # add javascript
-            $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/convertPrices.js');
+                $resources = CRM_Core_Resources::singleton();
 
-            # add settings
-            $resources->addSetting(array(
-                'btc_processor_ids' => bitcoin_get_processor_ids('BitcoinD'),
-                'btc_exchange_rate' => bitcoin_get_exchange_rate(
-                    bitcoin_get_currency('event', $form->_eventId)
-                )
-            ));
+                # load underscore.js on versions lower than 4.5 - think 4.5 includes lodash by default, but need to check
+                if (bitcoin_crm_version() < 4.5)
+                    $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
+                
+                # add javascript
+                $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/convertPrices.js');
+
+                # add settings
+                $resources->addSetting(array(
+                    'btc_processor_ids' => bitcoin_get_processor_ids('BitcoinD'),
+                    'btc_exchange_rate' => bitcoin_get_exchange_rate(
+                        bitcoin_get_currency('event', $form->_eventId)
+                    )
+                ));
+
+            }
 
             break; 
     
         case 'CRM_Event_Form_Registration_Confirm':
 
-            if (in_array(
-                $form->_paymentProcessor['id'],
-                bitcoin_get_processor_ids('BitcoinD') +
-                bitcoin_get_processor_ids('Bitpay')
-            )) {
-
+            if (bitcoin_processor_enabled('event', $form->_values['event']['id'])) {
+          
                 $resources = CRM_Core_Resources::singleton();
 
                 # load underscore.js on versions lower than 4.5
@@ -55,8 +55,14 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
                 $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/confirm.js');
 
                 # add settings
+                $is_bitpay = in_array(
+                    $form->_paymentProcessor['id'], 
+                    bitcoin_get_processor_ids('BitPay')
+                );
+
                 $exchange_rate = bitcoin_get_exchange_rate(
-                    bitcoin_get_currency('event', $form->_values['event']['id'])
+                    bitcoin_get_currency('event', $form->_values['event']['id']),
+                    $is_bitpay ? 'BitPay' : 'BitcoinD'
                 );
 
                 $resources->addSetting(array(
@@ -187,8 +193,6 @@ function bitcoin_civicrm_uninstall() {
 
 }
 
-
-
 /**
  * Get Civi version as 1-decimal-place float - eg: 4.4
  * @return float
@@ -221,9 +225,21 @@ function bitcoin_get_currency($entity_type, $entity_id) {
 
 }
 
-function bitcoin_get_exchange_rate($currency) {
-    if ($exchange_rates = bitcoin_setting('btc_exchange_rate') and isset($exchange_rates->$currency))
-        return $exchange_rates->$currency->last;
+function bitcoin_get_exchange_rate($currency, $processor = 'BitcoinD') {
+    
+    switch ($processor) {
+        
+        case 'BitcoinD':
+            if ($exchange_rates = bitcoin_setting('btc_exchange_rate') and isset($exchange_rates->$currency))
+                return $exchange_rates->$currency->last;
+            break;
+
+        case 'BitPay':
+
+            break;
+          
+    }
+
 }
 
 /**
@@ -231,14 +247,14 @@ function bitcoin_get_exchange_rate($currency) {
  * @param  $type optional type, defaults to BitcoinD
  * @return array an array of processor ids
  */
-function bitcoin_get_processor_ids($type = 'BitcoinD') {
+function bitcoin_get_processor_ids($type = 'Both') {
 
     $ids = array();
 
     try {
 
         $result = civicrm_api3('PaymentProcessor', 'get', array(
-            'class_name' => 'Payment_' . $type,
+            'class_name' => $type == 'Both' ? array('BitPay', 'BitcoinD') : 'Payment_' . $type,
             'return.id'  => 1
         ));
 
@@ -287,6 +303,50 @@ function bitcoin_init() {
             if ($file = stream_resolve_include_path(strtr($class, '_', '/') . '.php')) 
                 require_once $file;
     });
+
+}
+
+/**
+ * Given an entity and an entity id, determine whether a bitcoin processor is enabled
+ * @param  string $entity     the entity type - 'Event' or 'ContributionPage'
+ * @param  int    $entity_id  the entity id of the entity to query
+ * @return mixed              string (type of processor) or false if not enabled
+ */
+function bitcoin_processor_enabled($entity, $entity_id) {
+
+    switch ($entity) {
+        
+        case 'event':
+        case 'contributionpage':
+            
+            try {
+                $result = civicrm_api3($entity, 'getsingle', array(
+                    'id' => $entity_id
+                )); 
+            } catch (CiviCRM_API3_Exception $e) {
+                CRM_Core_Error::fatal(ts('Unable to get event information for event id %1: %2', array(
+                    1 => $entity_id,
+                    2 => $e->getMessage()
+                )));
+            }
+
+            if (!is_array($result['payment_processor']))
+                $result['payment_processor'] = array($result['payment_processor']);
+
+            foreach (bitcoin_get_processor_ids() as $processor_id)
+                if (in_array($processor_id, $result['payment_processor']))
+                    return true;
+
+            return false;
+
+        default:
+            CRM_Core_Error::fatal(ts("Unrecognized entity type, '%1' in %2 at line %3", array(
+                1 => $entity,
+                2 => __FUNCTION__
+                3 => __LINE__
+            )));           
+    
+    }
 
 }
 

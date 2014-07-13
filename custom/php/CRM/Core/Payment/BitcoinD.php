@@ -8,7 +8,7 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
 
     /**
      * Machine name of payment processor
-     * @var string
+     * @var    string
      * @access protected
      * @static
      */
@@ -16,7 +16,7 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
 
     /**
      * Human-readable name of payment processor
-     * @var string
+     * @var    string
      * @access protected
      * @static
      */
@@ -24,11 +24,11 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
 
     /**
      * Billing mode
-     * @var string
+     * @var    string
      * @access protected
      * @static
      */
-    protected static $mode = 'form';
+    protected static $mode = 4; # notify
     
     /**
      * Do we support recurring or not
@@ -36,6 +36,18 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
      */
     protected static $is_recur = false;
 
+    /**
+     * PaymentProcessorType params specific to this processor
+     * @var    array
+     * @access protected
+     * @static
+     */
+    protected static $installParams = array(
+        'user_name_label'      => 'RPC User',
+        'password_label'       => 'RPC Password',
+        'url_api_default'      => 'http://localhost',
+        'url_api_test_default' => 'http://localhost'
+    );
 
     public function doTransferCheckout(&$params, $component = 'contribute') {
         

@@ -13,3 +13,4 @@
   </div>
 </div>
 <div style="clear:both"></div>
+<a class="button" title="Done" href="{$thankyou_url}">Done!</a>

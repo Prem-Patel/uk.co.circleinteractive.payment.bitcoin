@@ -1,0 +1,3 @@
+[submodule "custom/php/packages/bitpay/php-client"]
+	path = custom/php/packages/bitpay/php-client
+	url = https://github.com/bitpay/php-client.git
