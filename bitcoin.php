@@ -119,7 +119,7 @@ function bitcoin_civicrm_disable() {
  */
 function bitcoin_civicrm_enable() {
 
-    # initialize path to allow class autoloading
+    # initialize path + class autoloading
     bitcoin_init();
 
     try {
@@ -342,7 +342,7 @@ function bitcoin_processor_enabled($entity, $entity_id) {
         default:
             CRM_Core_Error::fatal(ts("Unrecognized entity type, '%1' in %2 at line %3", array(
                 1 => $entity,
-                2 => __FUNCTION__
+                2 => __FUNCTION__,
                 3 => __LINE__
             )));           
     
