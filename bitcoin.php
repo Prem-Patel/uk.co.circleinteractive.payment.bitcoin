@@ -17,8 +17,8 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
         case 'CRM_Event_Form_Registration_Register':
         # todo: contribution pages
                 
-            # check if this event uses BitcoinD processor and if so, do this ...
-            if (bitcoin_processor_enabled('event', $form->_eventId)) {
+            # check if this event uses a bitcoin processor and if so ..
+            if ($processor_name = bitcoin_processor_enabled('event', $form->_eventId)) {
 
                 $resources = CRM_Core_Resources::singleton();
 
@@ -31,9 +31,10 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
 
                 # add settings
                 $resources->addSetting(array(
-                    'btc_processor_ids' => bitcoin_get_processor_ids('BitcoinD'),
+                    'btc_processor_ids' => bitcoin_get_processor_ids(),
                     'btc_exchange_rate' => bitcoin_get_exchange_rate(
-                        bitcoin_get_currency('event', $form->_eventId)
+                        bitcoin_get_currency('event', $form->_eventId), 
+                        $processor_name # if both in use, will default to BitPay - which is what we want as it supports more currencies
                     )
                 ));
 
@@ -227,18 +228,9 @@ function bitcoin_get_currency($entity_type, $entity_id) {
 
 function bitcoin_get_exchange_rate($currency, $processor = 'BitcoinD') {
     
-    switch ($processor) {
-        
-        case 'BitcoinD':
-            if ($exchange_rates = bitcoin_setting('btc_exchange_rate') and isset($exchange_rates->$currency))
-                return $exchange_rates->$currency->last;
-            break;
-
-        case 'BitPay':
-
-            break;
-          
-    }
+    if ($processor == 'BitPay')
+        return CRM_Core_Payment_BitPay::getExchangeRate($currency);
+    return CRM_Core_Payment_BitcoinD::getExchangeRate($currency);
 
 }
 
@@ -249,24 +241,30 @@ function bitcoin_get_exchange_rate($currency, $processor = 'BitcoinD') {
  */
 function bitcoin_get_processor_ids($type = 'Both') {
 
+    # todo: implement static cache
+
     $ids = array();
 
-    try {
+    foreach ($type == 'Both' ? array('BitPay', 'BitcoinD') : array($type) as $processor) {
 
-        $result = civicrm_api3('PaymentProcessor', 'get', array(
-            'class_name' => $type == 'Both' ? array('BitPay', 'BitcoinD') : 'Payment_' . $type,
-            'return.id'  => 1
-        ));
+        try {
 
-    } catch (CiviCRM_API3_Exception $e) {
-        CRM_Core_Error::fatal(ts('Unable to get payment processor ids for class_name Payment_%1: %2', array(
-            1 => $type,
-            2 => $e->getMessage()
-        )));
+            $results = civicrm_api3('PaymentProcessor', 'get', array(
+                'class_name' => 'Payment_' . $processor,
+                'return.id'  => 1
+            ));
+
+        } catch (CiviCRM_API3_Exception $e) {
+            CRM_Core_Error::fatal(ts('Unable to get payment processor ids for class_name Payment_%1: %2', array(
+                1 => $type,
+                2 => $e->getMessage()
+            )));
+        }
+
+        foreach ($results['values'] as $result)
+            $ids[] = $result['id'];
+
     }
-
-    foreach ($result['values'] as $processor)
-        $ids[] = $processor['id'];
 
     return $ids;
 
@@ -333,9 +331,10 @@ function bitcoin_processor_enabled($entity, $entity_id) {
             if (!is_array($result['payment_processor']))
                 $result['payment_processor'] = array($result['payment_processor']);
 
-            foreach (bitcoin_get_processor_ids() as $processor_id)
-                if (in_array($processor_id, $result['payment_processor']))
-                    return true;
+            foreach (array('BitPay', 'BitcoinD') as $processor_name)
+                foreach (bitcoin_get_processor_ids($processor_name) as $processor_id)
+                    if (in_array($processor_id, $result['payment_processor']))
+                        return $processor_name;
 
             return false;
 

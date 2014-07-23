@@ -137,7 +137,7 @@ class Bitcoin_Utils_BTCUpdater extends Bitcoin_Utils_WebClient {
 
     }
 
-    protected function jobExists() {
+    protected static function jobExists() {
         
         try {
 

@@ -44,15 +44,31 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
      * @static
      */
     protected static $installParams = array(
-        'username_label'       => 'API Key ID',
-        'url_api_default'      => 'https://bitpay.com/api',
-        'url_api_test_default' => 'https://bitpay.com/api'
+        'user_name_label'       => 'API Key ID',
+        'url_site_default'      => 'https://bitpay.com/api',
+        'url_site_test_default' => 'https://bitpay.com/api'
     );
-
 
     public function doTransferCheckout(&$params, $component = 'contribute') {
         # todo ..
     }
 
+    /**
+     * Get the current BTC exchange rate
+     * @param  string $currency  currency to get exchange rate for
+     * @return float
+     */
+    public static function getExchangeRate($currency = 'USD') {
+        
+        $client = new Bitcoin_Utils_WebClient;
+        
+        if ($exchange = $client->get('http://bitpay.com/api/rates/' . $currency))
+            if ($exchange = @json_decode($exchange))
+                if (isset($exchange->rate))
+                    return $exchange->rate;
+        
+        return 0;
+
+    }
 
 }

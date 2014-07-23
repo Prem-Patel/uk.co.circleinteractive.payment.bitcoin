@@ -83,7 +83,7 @@ abstract class CRM_Core_Payment_Bitcoin extends CRM_Core_Payment {
 
             try {
 
-                civicrm_api3('PaymentProcessorType', 'create', self::$installParams + array(
+                civicrm_api3('PaymentProcessorType', 'create', $child::$installParams + array(
                     'name'         => $child::$name,
                     'title'        => $child::$title,
                     'class_name'   => self::className(),

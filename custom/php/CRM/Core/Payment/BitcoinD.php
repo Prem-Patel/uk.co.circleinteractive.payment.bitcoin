@@ -43,10 +43,10 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
      * @static
      */
     protected static $installParams = array(
-        'user_name_label'      => 'RPC User',
-        'password_label'       => 'RPC Password',
-        'url_api_default'      => 'http://localhost',
-        'url_api_test_default' => 'http://localhost'
+        'user_name_label'       => 'RPC User',
+        'password_label'        => 'RPC Password',
+        'url_site_default'      => 'http://localhost',
+        'url_site_test_default' => 'http://localhost'
     );
 
     public function doTransferCheckout(&$params, $component = 'contribute') {
@@ -84,5 +84,14 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
         );
     }
 
+    /**
+     * Get the current BTC exchange rate
+     * @param  string $currency  currency to get exchange rate for
+     * @return float
+     */
+    public static function getExchangeRate($currency = 'USD') {
+        if ($exchange_rates = bitcoin_setting('btc_exchange_rate') and isset($exchange_rates->$currency))
+            return $exchange_rates->$currency->last;
+    }
  
 }
