@@ -50,7 +50,11 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
     );
 
     public function doTransferCheckout(&$params, $component = 'contribute') {
-        # todo ..
+        
+        $client = new Bitcoin_Utils_WebClient;
+
+        
+
     }
 
     /**
