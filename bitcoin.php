@@ -10,14 +10,74 @@
  * Implementation of hook_civicrm_buildForm
  */
 function bitcoin_civicrm_buildForm($formName, &$form) {
-    
+    //watchdog('andyw', 'form = <pre>' . print_r($form, true) . '</pre>');
     switch ($formName) {
         
-        # on event registration pages + contribution pages
-        case 'CRM_Event_Form_Registration_Register':
-        # todo: contribution pages
+        # on contribution pages
+        case 'CRM_Contribute_Form_Contribution_Main':
+
+            # check if contribution page has a bitcoin processor enabled
+            if ($processor_name = bitcoin_processor_enabled('contributionPage', $form->_id)) {
+
+                $resources = CRM_Core_Resources::singleton();
+
+                # load underscore.js on versions lower than 4.5 - think 4.5 includes lodash by default, but need to check
+                if (bitcoin_crm_version() < 4.5)
+                    $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
                 
-            # check if this event uses a bitcoin processor and if so ..
+                # add javascript
+                $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/convert.js');
+
+                # add settings
+                $resources->addSetting(array(
+                    'btc_processor_ids' => bitcoin_get_processor_ids(),
+                    'btc_exchange_rate' => bitcoin_get_exchange_rate(
+                        bitcoin_get_currency('contributionPage', $form->_id), 
+                        $processor_name # if both in use, will default to querying exchange rate from BitPay
+                    )
+                ));
+            }
+
+            break;
+
+        # on contribution confirmation page
+        case 'CRM_Contribute_Form_Contribution_Confirm':
+
+            # if a bitcoin processor is the selected processor
+            if (in_array($form->_paymentProcessor['id'], bitcoin_get_processor_ids())) {
+
+                $resources = CRM_Core_Resources::singleton();
+
+                # load underscore.js on versions lower than 4.5
+                if (bitcoin_crm_version() < 4.5)
+                    $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
+
+                # add javascript
+                $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/contribution-confirm.js');
+
+                # add settings
+                $is_bitpay = in_array(
+                    $form->_paymentProcessor['id'], 
+                    bitcoin_get_processor_ids('BitPay')
+                );
+
+                $exchange_rate = bitcoin_get_exchange_rate(
+                    bitcoin_get_currency('contributionPage', $form->_id),
+                    $is_bitpay ? 'BitPay' : 'BitcoinD'
+                );
+
+                $resources->addSetting(array(
+                    'btc_exchange_rate' => $exchange_rate
+                ));
+
+            }
+
+            break;
+
+        # on event registration pages ..
+        case 'CRM_Event_Form_Registration_Register':
+                
+            # check if event uses a bitcoin processor and if so ..
             if ($processor_name = bitcoin_processor_enabled('event', $form->_eventId)) {
 
                 $resources = CRM_Core_Resources::singleton();
@@ -27,14 +87,14 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
                     $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
                 
                 # add javascript
-                $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/convertPrices.js');
+                $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/convert.js');
 
                 # add settings
                 $resources->addSetting(array(
                     'btc_processor_ids' => bitcoin_get_processor_ids(),
                     'btc_exchange_rate' => bitcoin_get_exchange_rate(
                         bitcoin_get_currency('event', $form->_eventId), 
-                        $processor_name # if both in use, will default to BitPay - which is what we want as it supports more currencies
+                        $processor_name # if both in use, will default to querying exchange rate from BitPay
                     )
                 ));
 
@@ -42,9 +102,12 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
 
             break; 
     
+        
+        # event confirmation page
         case 'CRM_Event_Form_Registration_Confirm':
 
-            if ($processor_name = bitcoin_processor_enabled('event', $form->_values['event']['id'])) {
+            # if a bitcoin processor is the selected processor
+            if (in_array($form->_paymentProcessor['id'], bitcoin_get_processor_ids())) {
           
                 $resources = CRM_Core_Resources::singleton();
 
@@ -53,7 +116,7 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
                     $resources->addScriptFile('civicrm', 'packages/backbone/underscore.js', 110, 'html-header', false);
 
                 # add javascript
-                $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/confirm.js');
+                $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/event-confirm.js');
 
                 # add settings
                 $is_bitpay = in_array(
@@ -324,16 +387,17 @@ function bitcoin_processor_enabled($entity, $entity_id) {
     switch ($entity) {
         
         case 'event':
-        case 'contributionpage':
+        case 'contributionPage':
             
             try {
                 $result = civicrm_api3($entity, 'getsingle', array(
                     'id' => $entity_id
                 )); 
             } catch (CiviCRM_API3_Exception $e) {
-                CRM_Core_Error::fatal(ts('Unable to get event information for event id %1: %2', array(
-                    1 => $entity_id,
-                    2 => $e->getMessage()
+                CRM_Core_Error::fatal(ts('Unable to get event information for %1 id %2: %3', array(
+                    1 => $entity,
+                    2 => $entity_id,
+                    3 => $e->getMessage()
                 )));
             }
 
