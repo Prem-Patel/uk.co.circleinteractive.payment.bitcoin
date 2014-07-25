@@ -42,12 +42,12 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
      * @access protected
      * @static
      */
-    protected static $installParams = array(
+    protected static $installParams = [
         'user_name_label'       => 'RPC User',
         'password_label'        => 'RPC Password',
         'url_site_default'      => 'http://localhost',
         'url_site_test_default' => 'http://localhost'
-    );
+    ];
 
     public function doTransferCheckout(&$params, $component = 'contribute') {
         
@@ -57,6 +57,9 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
         # todo: get new address
         $new_address = '15amaYtP47Nmf00m1yFNtuKGsmKQUwTJX';
         $transaction = &$_SESSION['bitcoin_trxn'];
+
+        # for bitcoind processor, create a new session object for the transaction and store price
+        $transaction->amount = round($params['amount'] / $exchange_rate, 4);
 
         $url   = ($component == 'event' ? 'civicrm/event/register' : 'civicrm/contribute/transact');
         $query = "_qf_ThankYou_display=1&qfKey=" . $params['qfKey'];

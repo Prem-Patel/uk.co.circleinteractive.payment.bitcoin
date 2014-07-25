@@ -44,7 +44,7 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
     
         case 'CRM_Event_Form_Registration_Confirm':
 
-            if (bitcoin_processor_enabled('event', $form->_values['event']['id'])) {
+            if ($processor_name = bitcoin_processor_enabled('event', $form->_values['event']['id'])) {
           
                 $resources = CRM_Core_Resources::singleton();
 
@@ -69,13 +69,6 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
                 $resources->addSetting(array(
                     'btc_exchange_rate' => $exchange_rate
                 ));
-
-                # create a new session object for the transaction and store price - we want to make
-                # make sure the price displayed to the user is the price they get charged by the 
-                # payment processor (in case exchange rate gets updated between page render and submission)
-                $_SESSION['bitcoin_trxn'] = (object)array(
-                    'amount' => round($form->_totalAmount / $exchange_rate, 4)
-                );
 
             }
 
@@ -275,8 +268,21 @@ function bitcoin_get_processor_ids($type = 'Both') {
  * or event pages.
  * @return bool
  */
-function bitcoin_in_use() {
-    return false; # for now
+function bitcoin_in_use($type = 'Both') {
+
+    if (!$ids = bitcoin_get_processor_ids($type))
+        return false;
+
+    # todo: may speed up things a little if we add a registration_end_date >= NOW() check on events
+
+    foreach ($ids as $id)
+        $conditions[] = sprintf("payment_processor LIKE '%s%d%s'", chr(1), $id, chr(1));
+
+    $conditions = implode(' OR ', $conditions);
+
+    return (bool)CRM_Core_DAO::singleValueQuery("SELECT 1 FROM civicrm_event WHERE $conditions") and
+           (bool)CRM_Core_DAO::singleValueQuery("SELECT 1 FROM civicrm_contribution_page WHERE $conditions");
+
 }
 
 /**
@@ -295,9 +301,12 @@ function bitcoin_init() {
     
     array_unshift($templates, __DIR__ . '/custom/templates');
 
+    # composer autoloader
+    require_once "vendor/autoload.php";
+
     # register autoloader for owned classes
     spl_autoload_register(function($class) {
-        if (strpos($class, 'Bitcoin_') === 0)
+        if (strpos($class, 'Bitcoin_') === 0 or strpos($class, 'BitPay_') === 0)
             if ($file = stream_resolve_include_path(strtr($class, '_', '/') . '.php')) 
                 require_once $file;
     });
@@ -331,7 +340,7 @@ function bitcoin_processor_enabled($entity, $entity_id) {
             if (!is_array($result['payment_processor']))
                 $result['payment_processor'] = array($result['payment_processor']);
 
-            foreach (array('BitPay', 'BitcoinD') as $processor_name)
+            foreach (['BitPay', 'BitcoinD'] as $processor_name)
                 foreach (bitcoin_get_processor_ids($processor_name) as $processor_id)
                     if (in_array($processor_id, $result['payment_processor']))
                         return $processor_name;

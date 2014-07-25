@@ -17,13 +17,13 @@ class Bitcoin_Payment_Page extends CRM_Core_Page {
         # add styles
         $resources->addStyleFile(
             bitcoin_extension_name(), 
-            'custom/css/payment.css',
+            'custom/css/bitcoin-payment.css',
             CRM_Core_Resources::DEFAULT_WEIGHT,
             'html-header'
         );
 
         # add javascript
-        $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/payment.js');
+        $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/bitcoin-payment.js');
 
         $transaction = &$_SESSION['bitcoin_trxn'];
 

@@ -1,0 +1,11 @@
+/* css for payment block */
+
+#bitpay-payment-block iframe {
+    width:680px;
+    height:425  px;
+    margin:0 auto 12px auto;
+    border:none;
+    /*border:1px solid red;*/
+    border-radius:6px;
+}
+
