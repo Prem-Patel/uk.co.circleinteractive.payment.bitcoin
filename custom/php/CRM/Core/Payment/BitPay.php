@@ -63,7 +63,7 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         
         $response = bpCreateInvoice($params['invoiceID'], 0.01, '', [
             'currency' => 'GBP',
-            'apiKey'   => 'pPpXdMAFzgjgtnjLcjS5Eye9eXU06jCbj0CCRFeO0'
+            'apiKey'   => $this->_paymentProcessor['user_name']
         ]);
 
         if (is_string($response))
