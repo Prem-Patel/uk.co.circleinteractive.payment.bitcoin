@@ -5,7 +5,7 @@
  * @method  string get()
  * @method  string post()
  * @author  andyw@circle
- * @package com.uk.andyw.payment.bitcoin
+ * @package uk.co.circleinteractive.payment.bitcoin
  */
 class Bitcoin_Utils_WebClient {
 	

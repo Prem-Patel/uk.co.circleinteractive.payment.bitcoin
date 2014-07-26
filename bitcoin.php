@@ -3,16 +3,27 @@
 /**
  * Bitcoin payment processor extension
  * @author  andyw@circle
- * @package com.uk.andyw.payment.bitcoin
+ * @package uk.co.circleinteractive.payment.bitcoin
  */
 
 /**
  * Implementation of hook_civicrm_buildForm
  */
 function bitcoin_civicrm_buildForm($formName, &$form) {
-    //watchdog('andyw', 'form = <pre>' . print_r($form, true) . '</pre>');
+    watchdog('andyw', 'buildform = <pre>' . print_r($form, true) . '</pre>');
     switch ($formName) {
         
+        # on payment processor admin form
+        case 'CRM_Admin_Form_PaymentProcessor':
+            
+            # if bitpay and no ssl enabled, display ssl warning
+            if ($form->_defaultValues['class_name'] == 'Payment_BitPay' and !bitcoin_ssl_enabled())
+                CRM_Core_Resources::singleton()->addScriptFile(
+                    bitcoin_extension_name(), 'custom/js/bitpay-ssl-warning.js'
+                );
+
+            break;
+
         # on contribution pages
         case 'CRM_Contribute_Form_Contribution_Main':
 
@@ -200,13 +211,6 @@ function bitcoin_civicrm_enable() {
 }
 
 /**
- * Implementation of hook_civicrm_xmlMenu
- */
-function bitcoin_civicrm_xmlMenu(&$files) {
-    $files[] = __DIR__ . '/custom/xml/routes.xml';
-}
-
-/**
  * Implementation of hook_civicrm_install
  */
 function bitcoin_civicrm_install() {
@@ -216,9 +220,10 @@ function bitcoin_civicrm_install() {
     
     try {
         
-        Bitcoin_Utils_BTCUpdater::createJob(); # create scheduled task for updating BTC exchange rate
-        CRM_Core_Payment_BitPay::install();    # install BitPay payment processor
-        CRM_Core_Payment_BitcoinD::install();  # install BitcoinD payment processor
+        Bitcoin_Utils_BTCUpdater::createJob();      # create scheduled task for updating BTC exchange rate
+        BitPay_Invoice_Status_Updater::createJob(); # create scheduled task for updating outstanding BitPay invoices
+        CRM_Core_Payment_BitPay::install();         # install BitPay payment processor
+        CRM_Core_Payment_BitcoinD::install();       # install BitcoinD payment processor
     
     } catch (CRM_Core_Exception $e) {
         CRM_Core_Error::fatal(ts('An error occurred installing extension: %1', array(
@@ -227,6 +232,44 @@ function bitcoin_civicrm_install() {
     }
 
 }
+
+/**
+ * Implementation of hook_civicrm_pageRun
+ */
+function bitcoin_civicrm_pageRun(&$page) {
+    watchdog('andyw', 'pageRun = <pre>' . print_r($page, true) . '</pre>');
+}
+
+/**
+ * Implementation of hook_civicrm_postProcess
+ */
+function bitcoin_civicrm_postProcess($formName, &$form) {
+
+    watchdog('andyw', 'postProcess = <pre>' . print_r($form, true) . '</pre>');
+
+    switch ($formName) {
+        
+        # payment processor admin form
+        case 'CRM_Admin_Form_PaymentProcessor':
+            
+            # BitPay
+            if ($form->_defaultValues['class_name'] == 'Payment_BitPay') {
+                
+                # install db table(s) if not already installed
+                BitPay_Payment_BAO_Transaction::installSchema();
+                
+                # disable or enable invoice status cron job based on whether ssl is enabled.
+                # when ssl enabled, we will receive ipn callbacks from bitpay so don't need the cron job
+                $action = bitcoin_ssl_enabled() ? 'disableJob' : 'enableJob';
+                BitPay_Invoice_Status_Updater::$action();
+
+            }
+            break;
+
+    }
+
+}
+
 
 /**
  * Implementation of hook_civicrm_uninstall
@@ -238,9 +281,10 @@ function bitcoin_civicrm_uninstall() {
 
     try {
         
-        Bitcoin_Utils_BTCUpdater::deleteJob();  # delete scheduled task for updating BTC exchange rate
-        CRM_Core_Payment_BitPay::uninstall();   # uninstall BitPay payment processor
-        CRM_Core_Payment_BitcoinD::uninstall(); # uninstall BitcoinD payment processor
+        Bitcoin_Utils_BTCUpdater::deleteJob();      # delete scheduled task for updating BTC exchange rate
+        BitPay_Invoice_Status_Updater::deleteJob(); # delete scheduled task for updating outstanding BitPay invoices
+        CRM_Core_Payment_BitPay::uninstall();       # uninstall BitPay payment processor
+        CRM_Core_Payment_BitcoinD::uninstall();     # uninstall BitcoinD payment processor
     
     } catch (CRM_Core_Exception $e) {
         CRM_Core_Error::fatal(ts('An error occurred uninstalling extension: %1', array(
@@ -404,7 +448,7 @@ function bitcoin_processor_enabled($entity, $entity_id) {
             if (!is_array($result['payment_processor']))
                 $result['payment_processor'] = array($result['payment_processor']);
 
-            foreach (['BitPay', 'BitcoinD'] as $processor_name)
+            foreach (array('BitPay', 'BitcoinD') as $processor_name)
                 foreach (bitcoin_get_processor_ids($processor_name) as $processor_id)
                     if (in_array($processor_id, $result['payment_processor']))
                         return $processor_name;
@@ -436,11 +480,42 @@ function bitcoin_setting($key, $value = null) {
 }
 
 /**
- * Job api callback
+ * Check if site has ssl enabled
+ * @return bool
+ */
+function bitcoin_ssl_enabled() {
+    return (bool)CRM_Core_Config::singleton()->enableSSL;
+}
+
+/**
+ * Job api callback to update btc exchange rate
  */
 function civicrm_api3_job_update_btc_exchange_rate() {
     
     $updater = new Bitcoin_Utils_BTCUpdater();
+    $updater->run();
+
+    if ($errors = $updater->getErrors())
+        return civicrm_api3_create_error(
+            ts('Unable to update BTC exchange rate: %1', array(
+                1 => "\n" . implode("\n", $errors)
+            ))
+        );
+
+    return civicrm_api3_create_success(
+        ts('Succesfully updated BTC exchange rate at %1', array(
+            1 => date('Y-m-d H:i:s')
+        ))
+    );
+
+}
+
+/**
+ * Job api callback for updating outstanding BitPay invoices
+ */
+function civicrm_api3_job_update_bitpay_invoices() {
+
+    $updater = new BitPay_Invoice_Status_Updater();
     $updater->run();
 
     if ($errors = $updater->getErrors())

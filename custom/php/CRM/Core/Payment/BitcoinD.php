@@ -42,12 +42,12 @@ class CRM_Core_Payment_BitcoinD extends CRM_Core_Payment_Bitcoin {
      * @access protected
      * @static
      */
-    protected static $installParams = [
+    protected static $installParams = array(
         'user_name_label'       => 'RPC User',
         'password_label'        => 'RPC Password',
         'url_site_default'      => 'http://localhost',
         'url_site_test_default' => 'http://localhost'
-    ];
+    );
 
     public function doTransferCheckout(&$params, $component = 'contribute') {
         

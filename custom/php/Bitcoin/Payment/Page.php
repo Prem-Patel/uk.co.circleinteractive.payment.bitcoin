@@ -3,7 +3,7 @@
 /**
  * Page class for BitcoinD processor payment page
  * @author  andyw@circle
- * @package com.uk.andyw.payment.bitcoin
+ * @package uk.co.circleinteractive.payment.bitcoin
  */
 class Bitcoin_Payment_Page extends CRM_Core_Page {
 

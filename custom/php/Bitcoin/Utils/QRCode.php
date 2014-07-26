@@ -3,7 +3,7 @@
 /**
  * QR Code Renderer class
  * @author  andyw@circle
- * @package com.uk.andyw.payment.bitcoin
+ * @package uk.co.circleinteractive.payment.bitcoin
  */
 class Bitcoin_Utils_QRCode {
 

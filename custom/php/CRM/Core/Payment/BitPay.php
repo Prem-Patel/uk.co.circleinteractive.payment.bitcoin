@@ -3,7 +3,7 @@
 /**
  * Payment processor class for BitPay
  * @author  andyw@circle
- * @package com.uk.andyw.payment.bitcoin
+ * @package uk.co.circleinteractive.payment.bitcoin
  */
 class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
     
@@ -43,40 +43,45 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
      * @access protected
      * @static
      */
-    protected static $installParams = [
+    protected static $installParams = array(
         'user_name_label'       => 'API Key ID',
         'url_site_default'      => 'https://bitpay.com/api',
         'url_site_test_default' => 'https://bitpay.com/api'
-    ];
+    );
 
     public function doTransferCheckout(&$params, $component = 'contribute') {
 
         watchdog('andyw', 'params = <pre>' . print_r($params, true) . '</pre>');
         
-        if (!in_array($component, ['contribute', 'event']))
+        if (!in_array($component, array('contribute', 'event')))
             CRM_Core_Error::fatal(ts('Component is invalid'));
 
         $config      = CRM_Core_Config::singleton();
         $transaction = &$_SESSION['bitpay_trxn'];
-        
-        require_once "packages/bitpay/php-client/bp_lib.php";
-        
-        $response = bpCreateInvoice($params['invoiceID'], 0.01, '', [
+    
+        $bitpayParams = array(
             'currency' => 'GBP',
             'apiKey'   => $this->_paymentProcessor['user_name']
-        ]);
+        );
+
+        CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
+
+        require_once "packages/bitpay/php-client/bp_lib.php";    
+        $response = bpCreateInvoice($params['invoiceID'], 0.01, '', $bitpayParams);
 
         if (is_string($response))
             throw new CRM_Core_Exception($response);
 
         $transaction = new StdClass;
-        
+
         $transaction->response = (object)$response;
         $transaction->thankyou_url = CRM_Utils_System::url(
             $component == 'event' ? 'civicrm/event/register' : 'civicrm/contribute/transact',
             "_qf_ThankYou_display=1&qfKey=" . $params['qfKey'], 
             true, null, false, true
         );
+
+        BitPay_Payment_BAO_Transaction::save($response);
 
         watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
 
@@ -117,6 +122,22 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
 
         return 0;
 
+    }
+
+    /**
+     * Handle payment notifications
+     */
+    public function handlePaymentNotification() {
+
+        switch ($module = CRM_Utils_Array::value('mo', $_GET)) {
+            case 'contribute':
+            case 'event':
+                $ipn = new BitPay_Payment_IPN();
+                $ipn->main($module);
+                break;
+            default:
+                CRM_Core_Error::debug_log_message(ts('Invalid or missing module name'));
+        }
 
     }
 

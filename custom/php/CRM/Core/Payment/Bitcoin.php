@@ -3,7 +3,7 @@
 /**
  * Abstract class providing shared functionality for Bitcoin payment processors
  * @author  andyw@circle
- * @package com.uk.andyw.payment.bitcoin
+ * @package uk.co.circleinteractive.payment.bitcoin
  */
 abstract class CRM_Core_Payment_Bitcoin extends CRM_Core_Payment {
 
