@@ -1,8 +1,9 @@
 <?php
 
 /**
- * Class to abstract the process of loading and saving 
- * BitPay transaction data
+ * Class to abstract the process of interacting with stored BitPay transaction data
+ * @author  andyw@circle
+ * @package uk.co.circleinteractive.payment.bitcoin
  */
 class BitPay_Payment_BAO_Transaction {
 
@@ -12,18 +13,16 @@ class BitPay_Payment_BAO_Transaction {
         'btcPaid', 'rate', 'exceptionStatus'
     ); 
 
-    public function __construct() {
-
-    }
-
     public static function getOutstanding() {
+
+        # todo: change query, check for not paid - invoice time in last 24 hours
 
         CRM_Core_DAO::executeQuery("
             SELECT * FROM civicrm_bitpay_transaction
-             WHERE invoiceTime > %1 AND expirationTime > %2
+             WHERE invoiceTime > %1 
+               AND status NOT IN ('complete', 'expired', 'invalid')
         ", array(
-              1 => array(time() - (60 * 15), 'Positive'),
-              2 => array(time(), 'Positive')
+              1 => array(time() - (60 * 60 * 24), 'Positive')
            )
         );
 
@@ -59,7 +58,9 @@ class BitPay_Payment_BAO_Transaction {
               `rate` double NOT NULL,
               `exceptionStatus` varchar(255) NOT NULL,
               PRIMARY KEY (`contribution_id`),
-              KEY `index_expirationTime` (`expirationTime`)
+              UNIQUE KEY `index_bitpay_id` (`bitpay_id`),
+              KEY `index_expirationTime` (`expirationTime`),
+              KEY `index_invoiceTime` (`invoiceTime`)
             ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
         ");
 
@@ -100,15 +101,9 @@ class BitPay_Payment_BAO_Transaction {
 
     public static function save($params) {
 
-        $required_params = array(
-            'contribution_id', 'bitpay_id', 'url', 'posData', 'status', 'btcPrice',
-            'price', 'currency', 'invoiceTime', 'expirationTime', 'currentTime',
-            'btcPaid', 'rate', 'exceptionStatus'
-        );
-
         $missing_params = array();
 
-        foreach ($required_params as $param)
+        foreach (self::$fields as $param)
             if (!isset($params[$param]))
                 $missing_params[] = $param;
 

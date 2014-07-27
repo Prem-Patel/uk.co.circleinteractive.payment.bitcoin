@@ -1,16 +1,8 @@
 <menu>
   <item>
-    <path>civicrm/payment/bitcoin/ajax</path>
-    <title>Bitcoin Ajax</title>
-    <page_callback>Bitcoin_Utils_Ajax_Controller</page_callback>
-    <page_arguments></page_arguments>
-    <access_arguments>make online contributions</access_arguments>
-    <adminGroup>CiviContribute</adminGroup>
-  </item>
-  <item>
     <path>civicrm/payment/bitcoin</path>
     <title>Invoice Status</title>
-    <page_callback>Bitcoin_Payment_Page</page_callback>
+    <page_callback>Bitcoin_Payment_Form</page_callback>
     <page_arguments></page_arguments>
     <access_arguments>make online contributions</access_arguments>
     <adminGroup>CiviContribute</adminGroup>
@@ -18,7 +10,7 @@
   <item>
     <path>civicrm/payment/bitpay</path>
     <title>Invoice Status</title>
-    <page_callback>BitPay_Payment_Page</page_callback>
+    <page_callback>BitPay_Payment_Form</page_callback>
     <page_arguments></page_arguments>
     <access_arguments>make online contributions</access_arguments>
     <adminGroup>CiviContribute</adminGroup>

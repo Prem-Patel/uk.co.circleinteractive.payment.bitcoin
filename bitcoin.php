@@ -16,8 +16,24 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
         # on payment processor admin form
         case 'CRM_Admin_Form_PaymentProcessor':
             
+            if (!isset($_GET['pp']) and !isset($_GET['id']))
+                return;
+
+            if (!isset($_GET['action']))
+                return;
+
+            $show_warning = false;
+
             # if bitpay and no ssl enabled, display ssl warning
-            if ($form->_defaultValues['class_name'] == 'Payment_BitPay' and !bitcoin_ssl_enabled())
+            if ($_GET['action'] == 'add')
+                if ($_GET['pp'] == bitcoin_get_processor_type_id('BitPay') and !bitcoin_ssl_enabled())
+                    $show_warning = true;
+
+            if ($_GET['action'] == 'update')
+                if (in_array($_GET['id'], bitcoin_get_processor_ids('BitPay')) and !bitcoin_ssl_enabled())
+                    $show_warning = true;
+
+            if ($show_warning)
                 CRM_Core_Resources::singleton()->addScriptFile(
                     bitcoin_extension_name(), 'custom/js/bitpay-ssl-warning.js'
                 );
@@ -41,11 +57,12 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
 
                 # add settings
                 $resources->addSetting(array(
+                    'num_processors'    => bitcoin_count_payment_processors('contributionPage', $form->_id),
                     'btc_processor_ids' => bitcoin_get_processor_ids(),
                     'btc_exchange_rate' => bitcoin_get_exchange_rate(
                         bitcoin_get_currency('contributionPage', $form->_id), 
                         $processor_name # if both in use, will default to querying exchange rate from BitPay
-                    )
+                    ),
                 ));
             }
 
@@ -102,6 +119,7 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
 
                 # add settings
                 $resources->addSetting(array(
+                    'num_processors'    => bitcoin_count_payment_processors('event', $form->_eventId),
                     'btc_processor_ids' => bitcoin_get_processor_ids(),
                     'btc_exchange_rate' => bitcoin_get_exchange_rate(
                         bitcoin_get_currency('event', $form->_eventId), 
@@ -251,7 +269,10 @@ function bitcoin_civicrm_postProcess($formName, &$form) {
         
         # payment processor admin form
         case 'CRM_Admin_Form_PaymentProcessor':
-            
+
+            if (!isset($form->_defaultValues['class_name']))
+                return;
+
             # BitPay
             if ($form->_defaultValues['class_name'] == 'Payment_BitPay') {
                 
@@ -269,7 +290,6 @@ function bitcoin_civicrm_postProcess($formName, &$form) {
     }
 
 }
-
 
 /**
  * Implementation of hook_civicrm_uninstall
@@ -290,6 +310,57 @@ function bitcoin_civicrm_uninstall() {
         CRM_Core_Error::fatal(ts('An error occurred uninstalling extension: %1', array(
             1 => $e->getMessage()
         )));        
+    }
+
+}
+
+/**
+ * Implementation of hook_civicrm_xmlMenu
+ */
+function bitcoin_civicrm_xmlMenu(&$files) {
+    $files[] = __DIR__ . '/custom/xml/routes.xml';
+}
+
+/**
+ * Given an entity and an entity id, return how many payment processors are enabled
+ * @param  string $entity     the entity type - 'Event' or 'ContributionPage'
+ * @param  int    $entity_id  the entity id of the entity to query
+ * @return int                number of enabled payment processors
+ */
+function bitcoin_count_payment_processors($entity, $entity_id) {
+
+    switch ($entity) {
+        
+        case 'event':
+        case 'contributionPage':
+            
+            try {
+                $result = civicrm_api3($entity, 'getsingle', array(
+                    'id' => $entity_id
+                )); 
+            } catch (CiviCRM_API3_Exception $e) {
+                CRM_Core_Error::fatal(ts('Unable to get payment processor count for %1 id %2: %3', array(
+                    1 => $entity,
+                    2 => $entity_id,
+                    3 => $e->getMessage()
+                )));
+            }
+
+            if (!$result['payment_processor'])
+                return 0;
+
+            if (!is_array($result['payment_processor']))
+                $result['payment_processor'] = array($result['payment_processor']);
+
+            return count($result['payment_processor']);
+
+        default:
+            CRM_Core_Error::fatal(ts("Unrecognized entity type, '%1' in %2 at line %3", array(
+                1 => $entity,
+                2 => __FUNCTION__,
+                3 => __LINE__
+            )));           
+    
     }
 
 }
@@ -367,6 +438,29 @@ function bitcoin_get_processor_ids($type = 'Both') {
     }
 
     return $ids;
+
+}
+
+/**
+ * Get payment processor type id for the specified processor
+ * @param  string $processor - one of 'BitPay', 'BitcoinD'
+ * @return int
+ */
+function bitcoin_get_processor_type_id($processor) {
+    
+    try {
+        
+        return civicrm_api3('PaymentProcessorType', 'getvalue', array(
+            'class_name' => 'Payment_' . $processor,
+            'return'     => 'id'
+        ));
+
+    } catch (CiviCRM_API3_Exception $e) {
+        throw new CRM_Core_Exception(ts('Unable to get payment processor type id for class_name Payment_%1: %2', array(
+            1 => $processor,
+            2 => $e->getMessage()
+        )));
+    }   
 
 }
 

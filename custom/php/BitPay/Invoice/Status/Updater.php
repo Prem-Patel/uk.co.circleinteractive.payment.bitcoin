@@ -5,7 +5,7 @@
  * Used to complete invoices when callback notifications are disabled
  * @author andyw@circle
  */
-class Updater {
+class BitPay_Invoice_Status_Updater {
 
     public $errors = array(); 
    
@@ -159,7 +159,31 @@ class Updater {
      */
     public function run() {
 
+        foreach (BitPay_Payment_BAO_Transaction::getOutstanding() as $bitpay_id)
+            self::update($bitpay_id);
 
+    }
+
+    /**
+     * Update invoice
+     * @param string $bitpay_id  the bitpay invoice id to update
+     */
+    public function update($bitpay_id) {
+
+        $invoice = BitPay_Payment_BAO_Transaction::load(array(
+            'bitpay_id' => $bitpay_id
+        ));
+
+        $client   = new \Guzzle\Service\Client();
+        $request  = $client->get('https://bitpay.com/api/invoice/' . $invoice['bitpay_id']);
+        $response = $request->send();
+
+        if ($updated_invoice = $response->json()) {
+            BitPay_Payment_BAO_Transaction::save($updated_invoice + array(
+                'contribution_id' => $invoice['contribution_id']
+            ));
+            # todo: if transaction completed, complete the transaction in Civi
+        }
 
     }
 

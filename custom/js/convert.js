@@ -55,6 +55,10 @@
             cj('.crm-price-amount-btc')[operation]();
         });
 
+        // show BTC prices if a bitcoin processor is the only enabled payment processor
+        if (CRM.num_processors == 1)
+            cj('.crm-price-amount-btc').show();
+
     });
 
 }).call(this);

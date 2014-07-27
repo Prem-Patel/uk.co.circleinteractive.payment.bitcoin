@@ -64,6 +64,12 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             'apiKey'   => $this->_paymentProcessor['user_name']
         );
 
+        # if ssl enabled, add notificationURL param
+        if (bitcoin_ssl_enabled())
+            $bitpayParams['notificationURL'] = CRM_Utils_System::url(
+                'civicrm/payment/ipn', '', true, null, false, true, false
+            );
+
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
 
         require_once "packages/bitpay/php-client/bp_lib.php";    
@@ -72,6 +78,7 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         if (is_string($response))
             throw new CRM_Core_Exception($response);
 
+        # write response to session object
         $transaction = new StdClass;
 
         $transaction->response = (object)$response;
@@ -81,7 +88,10 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             true, null, false, true
         );
 
-        BitPay_Payment_BAO_Transaction::save($response);
+        # save response data
+        BitPay_Payment_BAO_Transaction::save($response + array(
+            'contribution_id' => $params['contributionID']
+        ));
 
         watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
 

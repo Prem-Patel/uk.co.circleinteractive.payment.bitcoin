@@ -1,16 +1,16 @@
 <?php 
 
 /**
- * Page class for BitcoinD processor payment page
+ * Form class for BitcoinD processor payment page
  * @author  andyw@circle
  * @package uk.co.circleinteractive.payment.bitcoin
  */
-class Bitcoin_Payment_Page extends CRM_Core_Page {
+class Bitcoin_Payment_Form extends CRM_Core_Form {
 
     /**
-     * Page run - add resources, assign templates vars, then call parent run method
+     * buildQuickForm - add resources, assign templates vars, then call parent run method
      */
-    public function run() {
+    public function buildQuickForm() {
         
         $resources = CRM_Core_Resources::singleton();
 
@@ -32,7 +32,7 @@ class Bitcoin_Payment_Page extends CRM_Core_Page {
         $this->assign('thankyou_url', $transaction->thankyou_url);
         $this->assign('amount',       $transaction->amount);
            
-        return parent::run();
+        return parent::buildFor();
     
     }
 
