@@ -70,27 +70,42 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
                 'civicrm/payment/ipn', '', true, null, false, true, false
             );
 
+        # set redirect url
+        $redirect_params = array(
+            '_qf_ThankYou_display' => 1,
+            'qfKey'                => $params['qfKey'],
+            'processor'            => 'bitpay',
+            'id'                   => $param['contributionID']
+        );
+
+        $querystring = array();
+        foreach ($notifyParams as $key => $value)
+            $querystring[] = $key . '=' . urlencode($value);
+
+        $bitpayParams['redirectURL'] = CRM_Utils_System::url(
+            $component == 'event' ? 'civicrm/event/register' : 'civicrm/contribute/transact',
+            implode('&', $querystring), true, null, false, true
+        );
+
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
 
         require_once "packages/bitpay/php-client/bp_lib.php";    
         $response = bpCreateInvoice($params['invoiceID'], 0.01, '', $bitpayParams);
 
         if (is_string($response))
-            throw new CRM_Core_Exception($response);
+            CRM_Core_Error::fatal($response);
 
         # write response to session object
-        $transaction = new StdClass;
-
+        $transaction           = new StdClass;
         $transaction->response = (object)$response;
-        $transaction->thankyou_url = CRM_Utils_System::url(
-            $component == 'event' ? 'civicrm/event/register' : 'civicrm/contribute/transact',
-            "_qf_ThankYou_display=1&qfKey=" . $params['qfKey'], 
-            true, null, false, true
-        );
+
+        # save contribution_id
+        $transaction->contribution_id = $params['contributionID'];
 
         # save response data
         BitPay_Payment_BAO_Transaction::save($response + array(
-            'contribution_id' => $params['contributionID']
+            'contribution_id' => $params['contributionID'],
+            'bitpay_id'       => $response['id']
         ));
 
         watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
@@ -100,20 +115,6 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             CRM_Utils_System::url('civicrm/payment/bitpay', null, true, null, false, true, false)
         );
 
-        /*
-        $client  = new \Guzzle\Service\Client();
-        $request = $client->post('https://bitpay.com/api/invoice', [], [
-            'price'    => round($params['amount'], 2)
-            'currency' => 'USD'
-        ]);
-        
-        $response = $request->sendå();
-        */
-        /*
-        //$client = new Bitcoin_Utils_WebClient;
-        //$response = $client->post('https://munroe.prestige55.org/civicrm/ticket/authenticate?username=TestAPIUser&password=apitest123');
-        watchdog('andyw', 'response = <pre>' . print_r($response->getBody(), true) . "</pre>");
-        */
     }
 
     /**

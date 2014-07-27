@@ -166,6 +166,31 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
 
             break;
 
+        # thankyou pages
+        case 'CRM_Event_Form_Registration_ThankYou':
+            
+            if (!isset($_GET['processor']) or !isset($_GET['id']))
+                return;
+
+            # when bitpay is the processor
+            if ($_GET['processor' == 'bitpay']) {
+                
+                $transaction = &$_SESSION['bitpay_trxn'];
+                
+                # check the contribution id supplied matches the one
+                # in stored session data
+                if ($transaction->contribution_id != $_GET['id'])
+                    CRM_Core_Error::fatal(ts(
+                        'Failed integrity check while updating invoice status. ' . 
+                        'Please contact the site administrator.'
+                    ));
+
+                # perform an additional invoice status update
+                BitPay_Invoice_Status_Updater::update($transaction->response->id);
+            
+            }
+            break;
+
     }
 
 }
@@ -252,18 +277,9 @@ function bitcoin_civicrm_install() {
 }
 
 /**
- * Implementation of hook_civicrm_pageRun
- */
-function bitcoin_civicrm_pageRun(&$page) {
-    watchdog('andyw', 'pageRun = <pre>' . print_r($page, true) . '</pre>');
-}
-
-/**
  * Implementation of hook_civicrm_postProcess
  */
 function bitcoin_civicrm_postProcess($formName, &$form) {
-
-    watchdog('andyw', 'postProcess = <pre>' . print_r($form, true) . '</pre>');
 
     switch ($formName) {
         
@@ -375,7 +391,7 @@ function bitcoin_crm_version() {
 }
 
 function bitcoin_extension_name() {
-    return basename(__DIR__);
+    return 'uk.co.circleinteractive.payment.bitcoin';
 }
 
 function bitcoin_get_currency($entity_type, $entity_id) {

@@ -36,24 +36,6 @@ class BitPay_Payment_Form extends CRM_Core_Form {
     * postProcess - form is submitted automatically via javascript
     */
     public function postProcess() {
-        
-        $post        = $this->controller->exportValues();
-        $transaction = &$_SESSION['bitpay_trxn'];
-
-        if ($transaction->response->id != $post['bitpay_id'])
-            throw new CRM_Core_Exception(ts(
-                'Failed integrity check while updating invoice status. ' . 
-                'Please contact the site administrator.'
-            ));
-
-        # get invoice update from bitpay
-        BitPay_Invoice_Status_Updater::update($post['bitpay_id']);
-
-        # load updated invoice
-        $invoice = BitPay_Payment_BAO_Transaction::load($post['bitpay_id']);
-
-        # todo: check invoice status and if completed, complete payment in Civi 
-
     
     }
 

@@ -7,7 +7,7 @@
  */
 class BitPay_Payment_BAO_Transaction {
 
-    protected $fields = array(
+    protected static $fields = array(
         'contribution_id', 'bitpay_id', 'url', 'posData', 'status', 'btcPrice',
         'price', 'currency', 'invoiceTime', 'expirationTime', 'currentTime',
         'btcPaid', 'rate', 'exceptionStatus'
@@ -17,7 +17,7 @@ class BitPay_Payment_BAO_Transaction {
 
         # todo: change query, check for not paid - invoice time in last 24 hours
 
-        CRM_Core_DAO::executeQuery("
+        $dao = CRM_Core_DAO::executeQuery("
             SELECT * FROM civicrm_bitpay_transaction
              WHERE invoiceTime > %1 
                AND status NOT IN ('complete', 'expired', 'invalid')
@@ -69,7 +69,7 @@ class BitPay_Payment_BAO_Transaction {
     public static function load($params) {
 
         if (!$params)
-            throw new CRM_Core_Exception(ts("Empty params list in %1::%2", array(
+            CRM_Core_Error::fatal(ts("Empty params list in %1::%2", array(
                 1 => __CLASS__,
                 2 => __METHOD__
             )));
@@ -79,7 +79,7 @@ class BitPay_Payment_BAO_Transaction {
 
         foreach ($params as $key => $value) {
             $conditions[]  = "$key = %" . ++$i;
-            $db_params[$i] = $value; 
+            $db_params[$i] = array($value, 'String'); 
         }
 
         $where_clause = implode(' AND ', $conditions);
@@ -87,7 +87,7 @@ class BitPay_Payment_BAO_Transaction {
         $dao = CRM_Core_DAO::executeQuery("
             SELECT * FROM civicrm_bitpay_transaction 
             WHERE $where_clause
-        ");
+        ", $db_params);
 
         $record = array();
 
@@ -108,7 +108,7 @@ class BitPay_Payment_BAO_Transaction {
                 $missing_params[] = $param;
 
         if ($missing_params)
-            throw new CRM_Core_Exception(ts("Missing required params in %1::%2: %3", array(
+            CRM_Core_Error::fatal(ts("Missing required params in %1::%2: %3", array(
                 1 => __CLASS__,
                 2 => __METHOD__,
                 3 => implode(', ', $missing_params)
@@ -116,9 +116,9 @@ class BitPay_Payment_BAO_Transaction {
 
         CRM_Core_DAO::executeQuery("
             REPLACE INTO civicrm_bitpay_transaction (
-                'contribution_id', 'bitpay_id', 'url', 'posData', 'status', 'btcPrice', 'price', 
-                'currency', 'invoiceTime', 'expirationTime', 'currentTime', 'btcPaid', 'rate', 
-                'exceptionStatus'
+                contribution_id, bitpay_id, url, posData, status, btcPrice, price, 
+                currency, invoiceTime, expirationTime, currentTime, btcPaid, rate, 
+                exceptionStatus
             ) VALUES (
                 %1, %2, %3, %4, %5, %6, %7, %8, %9, %10, %11, %12, %13, %14
             )

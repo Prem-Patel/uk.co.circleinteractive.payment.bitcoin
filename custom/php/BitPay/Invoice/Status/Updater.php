@@ -137,6 +137,51 @@ class BitPay_Invoice_Status_Updater {
 
     }
 
+    /**
+     * Get payment processor details for the contribution specified
+     * @param  int $contribution_id  the id of the contribution
+     * @return array  fully loaded payment processor array
+     * @access protected
+     * @static
+     */
+    protected static function getPaymentProcessor($contribution_id) {
+        
+        try {
+
+            $is_test = civicrm_api3('contribution', 'getvalue', array(
+                'id'     => $contribution_id,
+                'return' => 'is_test'
+            ));
+
+        } catch (CiviCRM_API3_Exception $e) {
+            CRM_Core_Error::fatal(ts('Unable to get contribution data for contribution id %1: %2', array(
+                1 => $contribution_id,
+                2 => $e->getMessage()
+            )));
+        }
+
+        try {
+
+            return civicrm_api3('PaymentProcessor', 'getsingle', array(
+                'class_name' => 'Payment_BitPay',
+                'is_test'    => $is_test
+            ));
+
+        } catch (CiviCRM_API3_Exception $e) {
+            CRM_Core_Error::fatal(ts('Unable to get payment processor details in %1::%2: %3', array(
+                1 => __CLASS__,
+                2 => __METHOD__,
+                3 => $e->getMessage()
+            )));
+        }
+
+    }
+
+    /**
+     * Check if the job exists in the database
+     * @access protected
+     * @static
+     */
     protected static function jobExists() {
         
         try {
@@ -156,33 +201,46 @@ class BitPay_Invoice_Status_Updater {
 
     /**
      * Run scheduled job - update the status of outstanding BitPay invoices
+     * @access public
      */
     public function run() {
-
-        foreach (BitPay_Payment_BAO_Transaction::getOutstanding() as $bitpay_id)
-            self::update($bitpay_id);
+        
+        $outstanding = BitPay_Payment_BAO_Transaction::getOutstanding();
+        foreach ($outstanding as $invoice)
+            self::update($invoice['bitpay_id']);
 
     }
 
     /**
      * Update invoice
      * @param string $bitpay_id  the bitpay invoice id to update
+     * @access public
      */
     public function update($bitpay_id) {
 
-        $invoice = BitPay_Payment_BAO_Transaction::load(array(
+        if ($invoice = BitPay_Payment_BAO_Transaction::load(array(
             'bitpay_id' => $bitpay_id
-        ));
+        ))) {
+            
+            require_once "packages/bitpay/php-client/bp_lib.php";
+            $processor = self::getPaymentProcessor($invoice['contribution_id']);    
+            $response  = bpGetInvoice($bitpay_id, $processor['user_name']);
 
-        $client   = new \Guzzle\Service\Client();
-        $request  = $client->get('https://bitpay.com/api/invoice/' . $invoice['bitpay_id']);
-        $response = $request->send();
+            if (is_string($response))
+                CRM_Core_Error::fatal($response);
 
-        if ($updated_invoice = $response->json()) {
-            BitPay_Payment_BAO_Transaction::save($updated_invoice + array(
-                'contribution_id' => $invoice['contribution_id']
-            ));
-            # todo: if transaction completed, complete the transaction in Civi
+            if ($response) {
+                BitPay_Payment_BAO_Transaction::save($response + array(
+                    'contribution_id' => $invoice['contribution_id'],
+                    'bitpay_id'       => $bitpay_id
+                ));
+
+                if ($status == 'complete') {
+                    # todo: complete transaction using IPN class
+                }
+
+            }
+
         }
 
     }
