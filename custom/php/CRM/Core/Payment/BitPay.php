@@ -155,7 +155,9 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             case 'contribute':
             case 'event':
                 $ipn = new BitPay_Payment_IPN();
-                $ipn->main($module);
+                $invoice = $ipn->prepareData();
+                watchdog('andyw', 'prepared data: ' . print_r($invoice, true) . '</pre>');
+                $ipn->main($module, $invoice);
                 break;
             default:
                 CRM_Core_Error::debug_log_message(ts('Invalid or missing module name'));
