@@ -68,7 +68,8 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         if (bitcoin_ssl_enabled())
             $bitpayParams['notificationURL'] = CRM_Utils_System::url(
                 'civicrm/payment/ipn', 
-                'processor_id=' . $this->_paymentProcessor['id'], 
+                'processor_id=' . $this->_paymentProcessor['id'] .
+                '&mo='          . $component,
                 true, null, false, true, false
             );
 
