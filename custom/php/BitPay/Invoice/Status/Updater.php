@@ -157,17 +157,14 @@ class BitPay_Invoice_Status_Updater {
 
         } catch (CiviCRM_API3_Exception $e) {
             
-            # except contribution api is massively broken in 4.4.5 it would seem
-            if (!$is_test = CRM_Core_DAO::singleValueQuery("
+            # except contribution api is somehow massively broken on the site I'm testing on,
+            # typical - works fine on an indentical version elsewhere
+            $is_test = CRM_Core_DAO::singleValueQuery("
                 SELECT is_test FROM civicrm_contribution WHERE id = %1
             ", array(
                   1 => array($contribution_id, 'Positive')
                )
-            ))
-                CRM_Core_Error::fatal(ts('Unable to get contribution data for contribution id %1: %2', array(
-                    1 => $contribution_id,
-                    2 => $e->getMessage()
-                )));
+            );
 
         }
 
