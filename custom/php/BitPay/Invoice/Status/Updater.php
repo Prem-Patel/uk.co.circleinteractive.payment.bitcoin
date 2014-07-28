@@ -235,8 +235,9 @@ class BitPay_Invoice_Status_Updater {
                     'bitpay_id'       => $bitpay_id
                 ));
 
-                if ($status == 'complete') {
+                if ($response['status'] == 'complete') {
                     # todo: complete transaction using IPN class
+                    watchdog('andyw', 'completing transaction');
                 }
 
             }

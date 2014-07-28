@@ -75,29 +75,38 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             '_qf_ThankYou_display' => 1,
             'qfKey'                => $params['qfKey'],
             'processor'            => 'bitpay',
-            'id'                   => $param['contributionID']
+            'id'                   => $params['contributionID']
         );
 
         $querystring = array();
-        foreach ($notifyParams as $key => $value)
+        foreach ($redirect_params as $key => $value)
             $querystring[] = $key . '=' . urlencode($value);
 
-        $bitpayParams['redirectURL'] = CRM_Utils_System::url(
+        $thankyou_url = CRM_Utils_System::url(
             $component == 'event' ? 'civicrm/event/register' : 'civicrm/contribute/transact',
             implode('&', $querystring), true, null, false, true
-        );
+        ); 
 
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
 
         require_once "packages/bitpay/php-client/bp_lib.php";    
         $response = bpCreateInvoice($params['invoiceID'], 0.01, '', $bitpayParams);
+        watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
 
+        # check for errors
         if (is_string($response))
             CRM_Core_Error::fatal($response);
 
+        if (isset($response['error'])) {
+            $message = ts('An error occurred generating BitPay invoice.');
+            CRM_Core_Error::debug_log_message($message . ': ' . print_r($response, true));
+            CRM_Core_Error::fatal($message);
+        }
+
         # write response to session object
-        $transaction           = new StdClass;
-        $transaction->response = (object)$response;
+        $transaction               = new StdClass;
+        $transaction->response     = (object)$response;
+        $transaction->thankyou_url = $thankyou_url;
 
         # save contribution_id
         $transaction->contribution_id = $params['contributionID'];

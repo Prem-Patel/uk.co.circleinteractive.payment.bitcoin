@@ -10,7 +10,7 @@
   <item>
     <path>civicrm/payment/bitpay</path>
     <title>Invoice Status</title>
-    <page_callback>BitPay_Payment_Form</page_callback>
+    <page_callback>BitPay_Payment_Page</page_callback>
     <page_arguments></page_arguments>
     <access_arguments>make online contributions</access_arguments>
     <adminGroup>CiviContribute</adminGroup>

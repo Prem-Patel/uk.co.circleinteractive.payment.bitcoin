@@ -1,16 +1,16 @@
 <?php 
 
 /**
- * Form class for BitPay processor payment page
+ * Page class for BitPay processor payment page
  * @author  andyw@circle
  * @package uk.co.circleinteractive.payment.bitcoin
  */
-class BitPay_Payment_Form extends CRM_Core_Form {
+class BitPay_Payment_Page extends CRM_Core_Page {
 
     /**
-     * buildForm - add resources, assign templates vars, then call parent run method
+     * Page tun - add resources, assign templates vars, then call parent run method
      */
-    public function buildQuickForm() {
+    public function run() {
         
         $resources = CRM_Core_Resources::singleton();
 
@@ -25,18 +25,16 @@ class BitPay_Payment_Form extends CRM_Core_Form {
         # add javascript
         $resources->addScriptFile(bitcoin_extension_name(), 'custom/js/bitpay-payment.js');
 
+        # add smarty vars
         $transaction = &$_SESSION['bitpay_trxn'];
-
         $this->assign('response', $transaction->response);
-        $this->assign('thankyou_url', $transaction->thankyou_url);
-           
-    }
 
-   /*
-    * postProcess - form is submitted automatically via javascript
-    */
-    public function postProcess() {
-    
+        $resources->addSetting(array(
+            'thankyou_url' => $transaction->thankyou_url
+        ));
+
+        parent::run();
+ 
     }
 
 };
