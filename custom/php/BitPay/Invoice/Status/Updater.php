@@ -146,6 +146,8 @@ class BitPay_Invoice_Status_Updater {
      */
     protected static function getPaymentProcessor($contribution_id) {
         
+        watchdog('andyw', 'contribution_id = ' . $contribution_id);
+
         try {
 
             $is_test = civicrm_api3('contribution', 'getvalue', array(
@@ -221,7 +223,7 @@ class BitPay_Invoice_Status_Updater {
         if ($invoice = BitPay_Payment_BAO_Transaction::load(array(
             'bitpay_id' => $bitpay_id
         ))) {
-            
+            watchdog('andyw', 'invoice = <pre>' . print_r($invoice, true) . '</pre>');
             require_once "packages/bitpay/php-client/bp_lib.php";
             $processor = self::getPaymentProcessor($invoice['contribution_id']);    
             $response  = bpGetInvoice($bitpay_id, $processor['user_name']);
