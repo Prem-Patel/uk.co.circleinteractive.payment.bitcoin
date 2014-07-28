@@ -150,19 +150,26 @@ class BitPay_Invoice_Status_Updater {
 
         try {
 
-            $result = civicrm_api3('contribution', 'get', array(
-                'id' => $contribution_id
+            $is_test = civicrm_api3('contribution', 'getvalue', array(
+                'id'     => $contribution_id,
+                'return' => 'is_test'
             ));
 
         } catch (CiviCRM_API3_Exception $e) {
-            CRM_Core_Error::fatal(ts('Unable to get contribution data for contribution id %1: %2', array(
-                1 => $contribution_id,
-                2 => $e->getMessage()
-            )));
-        }
+            
+            # except contribution api is massively broken in 4.4.5 it would seem
+            if (!$is_test = CRM_Core_DAO::singleValueQuery("
+                SELECT is_test FROM civicrm_contribution WHERE id = %1
+            ", array(
+                  1 => array($contribution_id, 'Positive')
+               )
+            ))
+                CRM_Core_Error::fatal(ts('Unable to get contribution data for contribution id %1: %2', array(
+                    1 => $contribution_id,
+                    2 => $e->getMessage()
+                )));
 
-        $result  = reset($result['values']);
-        $is_test = $result['is_test'];
+        }
 
         try {
 
