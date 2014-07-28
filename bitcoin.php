@@ -613,7 +613,10 @@ function bitcoin_setting($key, $value = null) {
  * @return bool
  */
 function bitcoin_ssl_enabled() {
-    return (bool)CRM_Core_Config::singleton()->enableSSL;
+    # just because we might not be on ssl right now, doesn't mean ssl is not enabled
+    # but this is the best check I could come up with. $config->enableSSL doesn't count
+    # for anything either, so this will have to do for the moment.
+    return (!empty($_SERVER['HTTPS']) and $_SERVER['HTTPS'] !== 'off') or $_SERVER['SERVER_PORT'] == 443;
 }
 
 /**
