@@ -69,7 +69,7 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             $bitpayParams['notificationURL'] = CRM_Utils_System::url(
                 'civicrm/payment/ipn', 
                 'processor_id=' . $this->_paymentProcessor['id'] .
-                '&mo='          . $component,
+                '&mo='          . $component
                 true, null, false, true, false
             );
 
@@ -120,8 +120,6 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             'bitpay_id'       => $response['id']
         ));
 
-        watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
-
         # redirect to payment page
         CRM_Utils_System::redirect(
             CRM_Utils_System::url('civicrm/payment/bitpay', null, true, null, false, true, false)
@@ -153,12 +151,24 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
     public function handlePaymentNotification() {
 
         switch ($module = CRM_Utils_Array::value('mo', $_GET)) {
+            
             case 'contribute':
             case 'event':
-                $ipn = new BitPay_Payment_IPN();
-                $invoice = $ipn->prepareData();
-                watchdog('andyw', 'prepared data: ' . print_r($invoice, true) . '</pre>');
-                $ipn->main($module, $invoice);
+                
+                $ipn     = new BitPay_Payment_IPN();
+                $result  = $ipn->verifyData();
+                
+                if (is_string($result)) {
+                    # and for now, watchdog it, but remove this
+                    watchdog('andyw', $result);
+                    return CRM_Core_Error::debug_log_message(
+                        bitcoin_extension_name() . ': ' . $result
+                    );
+                }
+
+                watchdog('andyw', 'prepared data: ' . print_r($result, true) . '</pre>');
+                $ipn->main($module, $result);
+                
                 break;
             default:
                 CRM_Core_Error::debug_log_message(ts('Invalid or missing module name'));

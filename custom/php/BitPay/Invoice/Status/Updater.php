@@ -145,8 +145,6 @@ class BitPay_Invoice_Status_Updater {
      * @static
      */
     protected static function getPaymentProcessor($contribution_id) {
-        
-        watchdog('andyw', 'contribution_id = ' . $contribution_id);
 
         try {
 
@@ -229,7 +227,7 @@ class BitPay_Invoice_Status_Updater {
         if ($invoice = BitPay_Payment_BAO_Transaction::load(array(
             'bitpay_id' => $bitpay_id
         ))) {
-            watchdog('andyw', 'invoice = <pre>' . print_r($invoice, true) . '</pre>');
+
             require_once "packages/bitpay/php-client/bp_lib.php";
             $processor = self::getPaymentProcessor($invoice['contribution_id']);    
             $response  = bpGetInvoice($bitpay_id, $processor['user_name']);
@@ -243,6 +241,8 @@ class BitPay_Invoice_Status_Updater {
                     'bitpay_id'       => $bitpay_id
                 ));
 
+                # should never be complete at this stage unless transactionSpeed
+                # is set to 
                 if ($response['status'] == 'complete') {
                     # todo: complete transaction using IPN class
                     watchdog('andyw', 'completing transaction');
