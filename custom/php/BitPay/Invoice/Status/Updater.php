@@ -150,9 +150,8 @@ class BitPay_Invoice_Status_Updater {
 
         try {
 
-            $is_test = civicrm_api3('contribution', 'getvalue', array(
-                'id'     => $contribution_id,
-                'return' => 'is_test'
+            $result = civicrm_api3('contribution', 'get', array(
+                'id' => $contribution_id
             ));
 
         } catch (CiviCRM_API3_Exception $e) {
@@ -161,6 +160,9 @@ class BitPay_Invoice_Status_Updater {
                 2 => $e->getMessage()
             )));
         }
+
+        $result  = reset($result['values']);
+        $is_test = $result['is_test'];
 
         try {
 
