@@ -20,7 +20,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
      */
     public function main($module, $invoice) {
         
-        CRM_Core_DAO::debug_log_message('BitPay: running ipn, module = ' . $module . ', data = ' . print_r($invoice, true));
+        CRM_Core_Error::debug_log_message('BitPay: running ipn, module = ' . $module . ', data = ' . print_r($invoice, true));
 
         if ($stored_transaction = BitPay_Payment_BAO_Transaction::load(array(
             'bitpay_id' => $invoice['id']
@@ -107,7 +107,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
             return $this->single($input, $ids, $objects, false, false);
 
         } else {
-            return CRM_Core_DAO::debug_log_message(ts("BitPay: failed to load invoice id %1 in %2::%3", array(
+            return CRM_Core_Error::debug_log_message(ts("BitPay: failed to load invoice id %1 in %2::%3", array(
                 1 => $invoice['id'],
                 2 => __CLASS__,
                 3 => __METHOD__
