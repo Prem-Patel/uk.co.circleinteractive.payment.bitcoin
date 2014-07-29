@@ -138,6 +138,28 @@ class BitPay_Invoice_Status_Updater {
     }
 
     /**
+     * Get the module name (contribute or event) from the contribution id
+     * since IPN class likes to know this
+     * @access protected
+     * @static
+     */
+    protected static function getModule($contribution_id) {
+        
+        try {
+
+            return civicrm_api3('participantPayment', 'getcount', array(
+                'contribution_id' => $contribution_id
+            )) ? 'event' : 'contribute';
+
+        } catch (CiviCRM_API3_Exception $e) {
+            CRM_Core_Error::fatal(ts('Unable to get module name: %1', array(
+                1 => $e->getMessage()
+            )));
+        }
+
+    }
+
+    /**
      * Get payment processor details for the contribution specified
      * @param  int $contribution_id  the id of the contribution
      * @return array  fully loaded payment processor array
@@ -219,7 +241,7 @@ class BitPay_Invoice_Status_Updater {
 
     /**
      * Update invoice
-     * @param string $bitpay_id  the bitpay invoice id to update
+     * @param  string $bitpay_id  the bitpay invoice id to update
      * @access public
      */
     public function update($bitpay_id) {
@@ -228,6 +250,7 @@ class BitPay_Invoice_Status_Updater {
             'bitpay_id' => $bitpay_id
         ))) {
 
+            # get invoice status for the specified invoice id
             require_once "packages/bitpay/php-client/bp_lib.php";
             $processor = self::getPaymentProcessor($invoice['contribution_id']);    
             $response  = bpGetInvoice($bitpay_id, $processor['user_name']);
@@ -235,6 +258,17 @@ class BitPay_Invoice_Status_Updater {
             if (is_string($response))
                 CRM_Core_Error::fatal($response);
 
+            if (!$module = self::getModule($invoice['contribution_id']))
+                CRM_Core_Error::fatal(ts('Unable to get module name for contribution id %1 in %2::%3', array(
+                    1 => $invoice['contribution_id'],
+                    2 => __CLASS__,
+                    3 => __METHOD__
+                )));
+
+            $ipn = new BitPay_Payment_IPN();
+            $ipn->main($module, $invoice);
+            
+            /*
             # todo: get ipn to handle this, but we will need to know the module
             # first (contribute or event), so write a function for that as well
             if ($response) {
@@ -244,13 +278,14 @@ class BitPay_Invoice_Status_Updater {
                 ));
 
                 # should never be complete at this stage unless transactionSpeed
-                # is set to 
+                # is set to 'high'
                 if ($response['status'] == 'complete') {
                     # todo: complete transaction using IPN class
                     watchdog('andyw', 'completing transaction');
                 }
 
             }
+            */
 
         }
 

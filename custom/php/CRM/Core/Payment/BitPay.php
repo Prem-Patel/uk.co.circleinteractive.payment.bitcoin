@@ -49,6 +49,11 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         'url_site_test_default' => 'https://bitpay.com/api'
     );
 
+    /**
+     * Initialize transaction
+     * @param array  $params     data relating to the transaction
+     * @param string $component  'contribute' or 'event'
+     */
     public function doTransferCheckout(&$params, $component = 'contribute') {
 
         watchdog('andyw', 'params = <pre>' . print_r($params, true) . '</pre>');
@@ -170,22 +175,19 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             case 'event':
                 
                 $ipn     = new BitPay_Payment_IPN();
-                $result  = $ipn->verifyData();
+                $result  = $ipn->verifyNotification();
                 
-                if (is_string($result)) {
-                    # and for now, watchdog it, but remove this
-                    watchdog('andyw', $result);
+                if (is_string($result))
                     return CRM_Core_Error::debug_log_message(
                         bitcoin_extension_name() . ': ' . $result
                     );
-                }
 
-                watchdog('andyw', 'prepared data: ' . print_r($result, true) . '</pre>');
                 $ipn->main($module, $result);
-                
                 break;
+
             default:
                 CRM_Core_Error::debug_log_message(ts('Invalid or missing module name'));
+        
         }
 
     }
