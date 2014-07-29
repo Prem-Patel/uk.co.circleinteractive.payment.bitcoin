@@ -31,7 +31,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
 
             # write updated status back to database
             BitPay_Payment_BAO_Transaction::save($response + array(
-                'contribution_id' => $invoice['contribution_id'],
+                'contribution_id' => $contribution_id,
                 'bitpay_id'       => $invoice['id']
             ));
 
