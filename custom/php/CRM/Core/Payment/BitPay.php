@@ -61,8 +61,7 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
     
         $bitpayParams = array(
             'currency'  => 'GBP',
-            'apiKey'    => $this->_paymentProcessor['user_name'],
-            'verifyPos' => false # may want to verify in future, but is liable to cause overflow
+            'apiKey'    => $this->_paymentProcessor['user_name']
         );
 
         # if ssl enabled, add notificationURL param
@@ -92,34 +91,18 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         );
 
         # construct passthru variable
-        $posData = array(
-            'cid'   => $params['contactID'],
-            'conid' => $params['contributionID']
-        );
+        $posData = array('c' => $params['contactID']);
 
-        if ($component == 'event') {
+        if ($component == 'contribute') {       
             
-            $posData += array(
-                'eid' => $params['eventID'],
-                'pid' => $params['participantID']
-            );
-
-        } else {
-            
-            # add membership id where applicable
-            if (isset($params['membershipID'])) 
-                $posData['mid'] = $params['membershipID'];
-            
-            # related contact, if applicable
+            # add related contact, if applicable
             if (isset($params['related_contact'])) {
-                $posData['rcid'] = $params['related_contact'];
+                $posData['r'] = $params['related_contact'];
                 if (isset($params['onbehalf_dupe_alert']))
-                    $posData['obda'] = $params['onbehalf_dupe_alert'];
+                    $posData['d'] = $params['onbehalf_dupe_alert'];
             }
             
         }
-
-        watchdog('andyw', 'posData length: ' . strlen(json_encode($posData)));
 
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
         watchdog('andyw', 'bitpayParams = <pre>' . print_r($bitpayParams, true) . '</pre>');
