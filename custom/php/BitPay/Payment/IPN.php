@@ -8,8 +8,45 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
         parent::__construct();
     }
 
-    public function main($module, $data) {
-        watchdog('andyw', 'running ipn, module = ' . $module . ', data = <pre>' . print_r($data, true) . '</pre>');
+    public function main($module, $invoice) {
+        
+        watchdog('andyw', 'running ipn, module = ' . $module . ', data = <pre>' . print_r($invoice, true) . '</pre>');
+
+        if ($stored_transaction = BitPay_Payment_BAO_Transaction::load(array(
+            'bitpay_id' => $invoice['id']
+        ))) {
+            
+            # get contribution id
+            $contribution_id = $stored_transaction['contribution_id'];
+
+            # write updated status back to database
+            BitPay_Payment_BAO_Transaction::save($response + array(
+                'contribution_id' => $invoice['contribution_id'],
+                'bitpay_id'       => $bitpay_id
+            ));
+
+            # if anything other than complete, return for now
+            # todo: may want to handle expired, invalid
+            if ($status != 'complete') 
+                return;
+
+            switch ($module) {
+                
+                case 'event':
+                    # get participant and event ids
+                    
+                    break;
+                
+                case 'contribute':
+
+                    break;
+            }
+
+
+        } else {
+            watchdog('andyw', 'failed loading invoice');
+        }
+
     }
 
     public function verifyData() {
@@ -33,8 +70,6 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
                 1 => $processor_id
             )));
         }
-
-        watchdog('andyw', '_paymentProcessor = <pre>' . print_r($this->_paymentProcessor, true) . '</pre>');
 
         require_once "packages/bitpay/php-client/bp_lib.php";    
         return bpVerifyNotification($api_key);

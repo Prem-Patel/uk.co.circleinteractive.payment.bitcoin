@@ -156,7 +156,7 @@ class BitPay_Invoice_Status_Updater {
         } catch (CiviCRM_API3_Exception $e) {
             
             # except contribution api is somehow massively broken on the site I'm testing on,
-            # typical - works fine on an indentical version elsewhere
+            # typical - works fine on an identical version elsewhere
             $is_test = CRM_Core_DAO::singleValueQuery("
                 SELECT is_test FROM civicrm_contribution WHERE id = %1
             ", array(
@@ -235,6 +235,8 @@ class BitPay_Invoice_Status_Updater {
             if (is_string($response))
                 CRM_Core_Error::fatal($response);
 
+            # todo: get ipn to handle this, but we will need to know the module
+            # first (contribute or event), so write a function for that as well
             if ($response) {
                 BitPay_Payment_BAO_Transaction::save($response + array(
                     'contribution_id' => $invoice['contribution_id'],

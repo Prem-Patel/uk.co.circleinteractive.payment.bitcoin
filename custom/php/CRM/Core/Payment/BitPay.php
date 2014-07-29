@@ -88,7 +88,40 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         $thankyou_url = CRM_Utils_System::url(
             $component == 'event' ? 'civicrm/event/register' : 'civicrm/contribute/transact',
             implode('&', $querystring), true, null, false, true
-        ); 
+        );
+
+        # might be a lot of data to try and cram in this thing - they say a maximum of 100 chars
+        # other option is to store in db linked to contribution / bitpay id, but let's try
+        # this first.
+        $posData = array(
+            'cid'   => $params['contactID'],
+            'conid' => $params['contributionID'],
+            'qf'    => $params['qfKey']
+        );
+
+        if ($component == 'event') {
+            
+            $posData += array(
+                'eid' => $params['eventID'],
+                'pid' => $params['participantID']
+            );
+
+        } else {
+            
+            # add membership id where applicable
+            if (isset($params['membershipID'])) 
+                $posData['mid'] = $params['membershipID'];
+            
+            # related contact, if applicable
+            if (isset($params['related_contact'])) {
+                $posData['rcid'] = $params['related_contact'];
+                if (isset($params['onbehalf_dupe_alert']))
+                    $posData['obda'] = $params['onbehalf_dupe_alert'];
+            }
+            
+        }
+
+        watchdog('andyw', 'posData length: ' . strlen(json_encode($posData)));
 
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
         watchdog('andyw', 'bitpayParams = <pre>' . print_r($bitpayParams, true) . '</pre>');

@@ -15,8 +15,7 @@ class BitPay_Payment_BAO_Transaction {
 
     public static function getOutstanding() {
 
-        # todo: change query, check for not paid - invoice time in last 24 hours
-
+        # check for any non-finalized invoices in the past 24 hours
         $dao = CRM_Core_DAO::executeQuery("
             SELECT * FROM civicrm_bitpay_transaction
              WHERE invoiceTime > %1 
