@@ -106,6 +106,9 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
             self::$_paymentProcessor = &$objects['paymentProcessor'];
             
             # complete the transaction
+
+            # may as well tell me about it in the process too, as I'd be interested to know
+            CRM_Core_Error::debug_log_message('Transaction success: ' . $module);
             return $this->single($input, $ids, $objects, false, false);
 
         } else {
