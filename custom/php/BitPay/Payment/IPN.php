@@ -53,7 +53,8 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
                     "BitPay: Unable to complete payment - missing or empty contact id in notification handler"
                 );
 
-            $ids['contact'] = $invoice['posData']['c'];
+            $ids['contact']      = $invoice['posData']['c'];
+            $ids['contribution'] = $contribution_id;
 
             switch ($module) {
                 
@@ -65,7 +66,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
                        INNER JOIN civicrm_participant p ON p.id = pp.participant_id
                             WHERE pp.contribution_id = %1
                     ", array(
-                          1 => array($invoice['contribution_id'], 'Positive')
+                          1 => array($contribution_id, 'Positive')
                        )
                     );
 
@@ -86,7 +87,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
                         SELECT membership_id FROM civicrm_membership_payment
                          WHERE contribution_id = %1
                     ", array(
-                          1 => array($invoice['contribution_id'], 'Positive')
+                          1 => array($contribution_id, 'Positive')
                        )
                     );
 
