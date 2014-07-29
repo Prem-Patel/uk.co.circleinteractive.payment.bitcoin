@@ -60,8 +60,9 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         $transaction = &$_SESSION['bitpay_trxn'];
     
         $bitpayParams = array(
-            'currency' => 'GBP',
-            'apiKey'   => $this->_paymentProcessor['user_name']
+            'currency'  => 'GBP',
+            'apiKey'    => $this->_paymentProcessor['user_name'],
+            'verifyPos' => false # may want to verify in future, but is liable to cause overflow
         );
 
         # if ssl enabled, add notificationURL param
