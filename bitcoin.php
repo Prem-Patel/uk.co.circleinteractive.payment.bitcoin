@@ -10,7 +10,7 @@
  * Implementation of hook_civicrm_buildForm
  */
 function bitcoin_civicrm_buildForm($formName, &$form) {
-    watchdog('andyw', 'buildform = <pre>' . print_r($form, true) . '</pre>');
+    # watchdog('andyw', 'buildform = <pre>' . print_r($form, true) . '</pre>');
     switch ($formName) {
         
         # on payment processor admin form

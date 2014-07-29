@@ -56,7 +56,7 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
      */
     public function doTransferCheckout(&$params, $component = 'contribute') {
 
-        watchdog('andyw', 'params = <pre>' . print_r($params, true) . '</pre>');
+        # watchdog('andyw', 'params = <pre>' . print_r($params, true) . '</pre>');
         
         if (!in_array($component, array('contribute', 'event')))
             CRM_Core_Error::fatal(ts('Component is invalid'));
@@ -110,10 +110,10 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         }
 
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
-        watchdog('andyw', 'bitpayParams = <pre>' . print_r($bitpayParams, true) . '</pre>');
+        #watchdog('andyw', 'bitpayParams = <pre>' . print_r($bitpayParams, true) . '</pre>');
         require_once "packages/bitpay/php-client/bp_lib.php";    
         $response = bpCreateInvoice($params['invoiceID'], 0.01, $posData, $bitpayParams);
-        watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
+        #watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
 
         # check for errors
         if (is_string($response))
