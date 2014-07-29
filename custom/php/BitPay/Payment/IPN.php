@@ -22,17 +22,19 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
         
         CRM_Core_Error::debug_log_message('BitPay: running ipn, module = ' . $module . ', data = ' . print_r($invoice, true));
 
+        $bitpay_id = isset($invoice['id']) ? $invoice['id'] : $invoice['bitpay_id'];
+
         if ($stored_transaction = BitPay_Payment_BAO_Transaction::load(array(
-            'bitpay_id' => isset($invoice['id']) ? $invoice['id'] : $invoice['bitpay_id']
+            'bitpay_id' => $bitpay_id
         ))) {
             
             # get contribution id
             $contribution_id = $stored_transaction['contribution_id'];
 
             # write updated status back to database
-            BitPay_Payment_BAO_Transaction::save($response + array(
+            BitPay_Payment_BAO_Transaction::save($invoice + array(
                 'contribution_id' => $contribution_id,
-                'bitpay_id'       => $invoice['id']
+                'bitpay_id'       => $bitpay_id
             ));
 
             # if anything other than complete, return for now
