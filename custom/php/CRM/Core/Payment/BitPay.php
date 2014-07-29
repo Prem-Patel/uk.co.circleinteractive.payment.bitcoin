@@ -90,13 +90,10 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             implode('&', $querystring), true, null, false, true
         );
 
-        # might be a lot of data to try and cram in this thing - they say a maximum of 100 chars
-        # other option is to store in db linked to contribution / bitpay id, but let's try
-        # this first.
+        # construct passthru variable
         $posData = array(
             'cid'   => $params['contactID'],
-            'conid' => $params['contributionID'],
-            'qf'    => $params['qfKey']
+            'conid' => $params['contributionID']
         );
 
         if ($component == 'event') {
@@ -126,7 +123,7 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
         watchdog('andyw', 'bitpayParams = <pre>' . print_r($bitpayParams, true) . '</pre>');
         require_once "packages/bitpay/php-client/bp_lib.php";    
-        $response = bpCreateInvoice($params['invoiceID'], 0.01, '', $bitpayParams);
+        $response = bpCreateInvoice($params['invoiceID'], 0.01, $posData, $bitpayParams);
         watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
 
         # check for errors
