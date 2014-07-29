@@ -39,7 +39,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
 
             # if anything other than complete, return for now
             # todo: may want to handle expired, invalid
-            if ($status != 'complete') 
+            if ($invoice['status'] != 'complete') 
                 return;
 
             # ok, get started then ..
