@@ -604,8 +604,8 @@ function bitcoin_processor_enabled($entity, $entity_id) {
  */
 function bitcoin_setting($key, $value = null) {
     if ($value)
-        return CRM_Core_BAO_Setting::setItem($value, basename(__DIR__), $key);
-    return CRM_Core_BAO_Setting::getItem(basename(__DIR__), $key);
+        return CRM_Core_BAO_Setting::setItem($value, bitcoin_extension_name(), $key);
+    return CRM_Core_BAO_Setting::getItem(bitcoin_extension_name(), $key);
 }
 
 /**
