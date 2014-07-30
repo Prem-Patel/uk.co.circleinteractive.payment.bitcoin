@@ -9,6 +9,7 @@
 class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
 
     public static $_paymentProcessor = null;
+    protected     $component;
     
     public function __construct() {
         parent::__construct();
@@ -55,6 +56,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
 
             $ids['contact']      = $invoice['posData']['c'];
             $ids['contribution'] = $contribution_id;
+            $ids['invoice']      = $bitpay_id;
 
             switch ($module) {
                 
@@ -110,7 +112,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
 
             # may as well tell me about it in the process too, as I'd be interested to know
             CRM_Core_Error::debug_log_message('Transaction success: ' . $module);
-            return $this->single($input, $ids, $objects, false, false);
+            return $this->single($input, $ids, $objects, $invoice);
 
         } else {
             return CRM_Core_Error::debug_log_message(ts("BitPay: failed to load invoice id %1 in %2::%3", array(
@@ -120,6 +122,58 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
             )));
         }
 
+    }
+
+    public function single(&$input, &$ids, &$objects, &$invoice) {
+        
+        $contribution =& $objects['contribution'];
+        
+        # make sure the invoice is valid and matches what we have in the contribution record
+        if ($contribution->invoice_id != $ids['invoice']) {
+            CRM_Core_Error::debug_log_message("Invoice values dont match between database and IPN request");
+            CRM_Core_Error::debug_log_message("contribution->invoice_id=" . $contribution->invoice_id);
+            CRM_Core_Error::debug_log_message("input['invoice']=" . $input['invoice']);
+            return false;
+        }
+
+
+        if ($contribution->total_amount != $invoice['price'])
+            return (bool)CRM_Core_Error::debug_log_message(
+                "Amount values dont match between database and IPN request"
+            );
+
+        $transaction = new CRM_Core_Transaction();
+        
+        $participant = &$objects['participant'];
+        $membership  = &$objects['membership'];
+        $status      = $invoice['status'];
+        
+        switch ($status) {
+
+            # check for failed statuses and fail transaction if present
+            case 'expired':
+            case 'invalid':
+                return $this->failed($objects, $transaction);
+
+            # completed transactions
+            case 'complete':
+                # check if contribution is already complete, if so ignore this ipn
+                if ($contribution->contribution_status_id == 1) {
+                    $transaction->commit();
+                    CRM_Core_Error::debug_log_message("returning since contribution has already been handled");
+                    return true;
+                }
+                
+                $this->completeTransaction($input, $ids, $objects, $transaction, false);
+                return true;
+
+            default:
+                return (bool)CRM_Core_Error::debug_log_message(
+                    "Unhandled status: " . $status
+                );
+
+        }
+        
     }
 
     /**

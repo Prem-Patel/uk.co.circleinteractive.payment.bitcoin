@@ -139,6 +139,21 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             'bitpay_id'       => $response['id']
         ));
 
+        # update contribution with the invoice id bitpay supplied
+        try {
+           
+            civicrm_api3('contribution', 'create', array(
+                'id'         => $params['contributionID'],
+                'invoice_id' => $response['id']
+            ));
+
+        } catch (CiviCRM_API3_Exception $e) {
+            CRM_Core_Error::fatal(ts('Unable to update contribution id %1: %2', array(
+                1 => $params['contributionID'],
+                2 => $e->getMessage()
+            )));
+        } 
+
         # redirect to payment page
         CRM_Utils_System::redirect(
             CRM_Utils_System::url('civicrm/payment/bitpay', null, true, null, false, true, false)
