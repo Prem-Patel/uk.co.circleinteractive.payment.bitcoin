@@ -156,15 +156,10 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
                 return $this->failed($objects, $transaction);
 
             # completed transactions
-            case 'complete':
-                # check if contribution is already complete, if so ignore this ipn
-                if ($contribution->contribution_status_id == 1) {
-                    $transaction->commit();
-                    CRM_Core_Error::debug_log_message("returning since contribution has already been handled");
-                    return true;
-                }
-                
+            case 'complete':   
+                CRM_Core_Error::debug_log_message("BitPay: Invoice status complete. Completing transaction ...");             
                 $this->completeTransaction($input, $ids, $objects, $transaction, false);
+                CRM_Core_Error::debug_log_message("BitPay: Transaction complete.");             
                 return true;
 
             default:
