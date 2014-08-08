@@ -234,6 +234,7 @@ class BitPay_Invoice_Status_Updater {
     public function run() {
         
         $outstanding = BitPay_Payment_BAO_Transaction::getOutstanding();
+        CRM_Core_Error::debug_log_message('BitPay: outstanding invoices - ' . print_r($outstanding, true));
         foreach ($outstanding as $invoice)
             self::update($invoice['bitpay_id']);
 
@@ -266,27 +267,8 @@ class BitPay_Invoice_Status_Updater {
                 )));
 
             $ipn = new BitPay_Payment_IPN();
-            $ipn->main($module, $invoice);
+            $ipn->main($module, $response);
             
-            /*
-            # todo: get ipn to handle this, but we will need to know the module
-            # first (contribute or event), so write a function for that as well
-            if ($response) {
-                BitPay_Payment_BAO_Transaction::save($response + array(
-                    'contribution_id' => $invoice['contribution_id'],
-                    'bitpay_id'       => $bitpay_id
-                ));
-
-                # should never be complete at this stage unless transactionSpeed
-                # is set to 'high'
-                if ($response['status'] == 'complete') {
-                    # todo: complete transaction using IPN class
-                    watchdog('andyw', 'completing transaction');
-                }
-
-            }
-            */
-
         }
 
     }

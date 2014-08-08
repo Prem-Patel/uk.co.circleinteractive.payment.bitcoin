@@ -21,7 +21,7 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
      */
     public function main($module, $invoice) {
         
-        CRM_Core_Error::debug_log_message('BitPay: running ipn, module = ' . $module . ', data = ' . print_r($invoice, true));
+        CRM_Core_Error::debug_log_message('BitPay IPN: module = ' . $module . ', data = ' . print_r($invoice, true));
 
         $bitpay_id = isset($invoice['id']) ? $invoice['id'] : $invoice['bitpay_id'];
 
@@ -47,7 +47,9 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
             $objects = array();
             $ids     = array();
 
-            $this->component = $module;
+            $this->component    = $module;
+            $input['component'] = $module; 
+            $input['amount']    = $invoice['price'];
 
             if (!isset($invoice['posData']['c']) or empty($invoice['posData']['c']))
                 return CRM_Core_Error::debug_log_message(
@@ -132,7 +134,6 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
         if ($contribution->invoice_id != $ids['invoice']) {
             CRM_Core_Error::debug_log_message("Invoice values dont match between database and IPN request");
             CRM_Core_Error::debug_log_message("contribution->invoice_id=" . $contribution->invoice_id);
-            CRM_Core_Error::debug_log_message("input['invoice']=" . $input['invoice']);
             return false;
         }
 

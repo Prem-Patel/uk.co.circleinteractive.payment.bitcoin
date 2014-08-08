@@ -17,13 +17,11 @@ class BitPay_Payment_BAO_Transaction {
 
         # check for any non-finalized invoices in the past 24 hours
         $dao = CRM_Core_DAO::executeQuery("
-            SELECT * FROM civicrm_bitpay_transaction
-             WHERE invoiceTime > %1 
-               AND status NOT IN ('complete', 'expired', 'invalid')
-        ", array(
-              1 => array(time() - (60 * 60 * 24), 'Positive')
-           )
-        );
+            SELECT cbt.* FROM civicrm_bitpay_transaction cbt
+        INNER JOIN civicrm_contribution c ON c.id = cbt.contribution_id
+             WHERE c.receive_date > DATE_SUB(NOW(), INTERVAL 1 DAY)
+               AND cbt.status NOT IN ('complete', 'expired', 'invalid')
+        ");
 
         $records = array();
 
