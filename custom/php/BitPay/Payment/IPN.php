@@ -158,9 +158,16 @@ class BitPay_Payment_IPN extends CRM_Core_Payment_BaseIPN {
 
             # completed transactions
             case 'complete':   
+                
+                # set these vars to prevent warnings in completeTransaction()
+                $input['is_test'] = $contribution->is_test;
+                $input['trxn_id'] = $contribution->trxn_id;
+
+                # complete transaction
                 CRM_Core_Error::debug_log_message("BitPay: Invoice status complete. Completing transaction ...");             
                 $this->completeTransaction($input, $ids, $objects, $transaction, false);
                 CRM_Core_Error::debug_log_message("BitPay: Transaction complete.");             
+                
                 return true;
 
             default:
