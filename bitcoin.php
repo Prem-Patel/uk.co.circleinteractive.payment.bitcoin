@@ -652,13 +652,13 @@ function civicrm_api3_job_update_bitpay_invoices() {
 
     if ($errors = $updater->getErrors())
         return civicrm_api3_create_error(
-            ts('Unable to update BTC exchange rate: %1', array(
+            ts('Unable to update outstanding BitPay invoices: %1', array(
                 1 => "\n" . implode("\n", $errors)
             ))
         );
 
     return civicrm_api3_create_success(
-        ts('Succesfully updated BTC exchange rate at %1', array(
+        ts('Succesfully updated outstanding BitPay invoices at %1', array(
             1 => date('Y-m-d H:i:s')
         ))
     );
