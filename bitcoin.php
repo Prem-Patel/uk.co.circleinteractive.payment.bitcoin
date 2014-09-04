@@ -174,24 +174,6 @@ function bitcoin_civicrm_buildForm($formName, &$form) {
 
             # when bitpay is the processor
             if ($_GET['processor'] == 'bitpay') {
-                /*
-                if (isset($_GET['frame']) and $_GET['frame']) {
-                    
-                    # break out of BitPay iframe
-                    $redirectURL = CRM_Utils_System::url(
-                        $component == 'event' ? 'civicrm/event/register' : 'civicrm/contribute/transact',
-                        '_qf_ThankYou_display=1&qfKey=' . $_GET['qfKey'] . '&processor=bitpay&id=' . $_GET['id'], 
-                        true, null, false, true
-                    );
-
-                    echo '<html><head><script type="text/javascript">' . 
-                         'top.location.href = "' . $redirectURL . '";' .
-                         '</script></head><body></body></html>';
-                    
-                    CRM_Utils_System::civiExit();
-                
-                }
-                */
                 
                 $transaction = &$_SESSION['bitpay_trxn'];
 
@@ -646,6 +628,8 @@ function civicrm_api3_job_update_btc_exchange_rate() {
  * Job api callback for updating outstanding BitPay invoices
  */
 function civicrm_api3_job_update_bitpay_invoices() {
+
+    bitcoin_init();
 
     $updater = new BitPay_Invoice_Status_Updater();
     $updater->run();

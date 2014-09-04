@@ -110,10 +110,9 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
         }
 
         CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $bitpayParams);
-        #watchdog('andyw', 'bitpayParams = <pre>' . print_r($bitpayParams, true) . '</pre>');
+        
         require_once "packages/bitpay/php-client/bp_lib.php";    
         $response = bpCreateInvoice($params['invoiceID'], $params['amount'], $posData, $bitpayParams);
-        #watchdog('andyw', 'response = <pre>' . print_r($response, true) . '</pre>');
 
         # check for errors
         if (is_string($response))
