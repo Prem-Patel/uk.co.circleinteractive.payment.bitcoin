@@ -8,7 +8,7 @@
 class BitPay_Payment_Page extends CRM_Core_Page {
 
     /**
-     * Page tun - add resources, assign templates vars, then call parent run method
+     * Page run - add resources, assign templates vars, then call parent run method
      */
     public function run() {
         
