@@ -144,7 +144,8 @@ class CRM_Core_Payment_BitPay extends CRM_Core_Payment_Bitcoin {
             civicrm_api3('contribution', 'create', array(
                 'id'                     => $params['contributionID'],
                 'invoice_id'             => $response['id'],
-                'contribution_status_id' => 2
+                'contribution_status_id' => 2,
+                'payment_instrument_id'  => bitcoin_setting('payment_instrument_id')
             ));
         
         } catch (CiviCRM_API3_Exception $e) {

@@ -211,47 +211,6 @@ function bitcoin_civicrm_disable() {
     # todo: do not want to even get here (or failing that, at least abort) 
     # if either payment processor in use - how to do that?
 
-    # initialize path to allow class autoloading
-    bitcoin_init();
-
-    try {
-        # disable scheduled task
-        Bitcoin_Utils_BTCUpdater::disableJob();
-
-    } catch (CRM_Core_Exception $e) {
-        CRM_Core_Error::fatal(ts('An error occurred disabling extension: %1', array(
-            1 => $e->getMessage()
-        )));
-    }
-
-}
-
-/**
- * Implementation of hook_civicrm_enable
- */
-function bitcoin_civicrm_enable() {
-
-    # initialize path + class autoloading
-    bitcoin_init();
-
-    try {
-        # enable scheduled task
-        Bitcoin_Utils_BTCUpdater::enableJob();
-
-    } catch (CRM_Core_Exception $e) {
-        CRM_Core_Error::fatal(ts('An error occurred enabling extension: %1', array(
-            1 => $e->getMessage()
-        )));
-    }
-
-    # update exchange rate
-    $updater = new Bitcoin_Utils_BTCUpdater();
-    $updater->run();
-
-    if ($errors = $updater->getErrors())
-        foreach ($errors as $error)
-            CRM_Core_Error::debug_log_message($error, true);  
-
 }
 
 /**
@@ -263,8 +222,8 @@ function bitcoin_civicrm_install() {
     bitcoin_init();
     
     try {
-        
-        Bitcoin_Utils_BTCUpdater::createJob();      # create scheduled task for updating BTC exchange rate
+
+        bitcoin_create_payment_instrument();        # create 'digital_currency' payment instrument
         BitPay_Invoice_Status_Updater::createJob(); # create scheduled task for updating outstanding BitPay invoices
         CRM_Core_Payment_BitPay::install();         # install BitPay payment processor
         CRM_Core_Payment_BitcoinD::install();       # install BitcoinD payment processor
@@ -318,7 +277,6 @@ function bitcoin_civicrm_uninstall() {
 
     try {
         
-        Bitcoin_Utils_BTCUpdater::deleteJob();      # delete scheduled task for updating BTC exchange rate
         BitPay_Invoice_Status_Updater::deleteJob(); # delete scheduled task for updating outstanding BitPay invoices
         CRM_Core_Payment_BitPay::uninstall();       # uninstall BitPay payment processor
         CRM_Core_Payment_BitcoinD::uninstall();     # uninstall BitcoinD payment processor
@@ -379,6 +337,57 @@ function bitcoin_count_payment_processors($entity, $entity_id) {
             )));           
     
     }
+
+}
+
+/**
+ * Create 'digital_currency' payment instrument and store the id, for
+ * use on contributions payed by Bitcoin
+ */
+function bitcoin_create_payment_instrument() {
+
+    # get option group for payment instruments
+    try {
+        $option_group_id = civicrm_api3('OptionGroup', 'getvalue', array(
+            'name'   => 'payment_instrument',
+            'return' => 'id'
+        ));
+    } catch (CiviCRM_API3_Exception $e) {
+        throw $e;
+    }
+
+    # check whether payment instrument already exists
+    try {
+        $result = civicrm_api3('OptionValue', 'get', array(
+            'option_group_id' => $option_group_id,
+            'name'            => 'digital_currency',
+            'sequential'      => 1
+        ));
+    } catch (CiviCRM_API3_Exception $e) {
+        throw $e;   
+    }
+
+    # if so, store id and return
+    if (isset($result['values']) and !empty($result['values']))
+        return bitcoin_setting(
+            'payment_instrument_id', 
+            $result['values'][0]['value']
+        );
+    
+    # create payment instrument
+    try {
+        $result = civicrm_api3('OptionValue', 'create', array(
+            'option_group_id' => $option_group_id,
+            'name'            => 'digital_currency',
+            'label'           => 'Digital Currency',
+            'sequential'      => 1
+        ));
+    } catch (CiviCRM_API3_Exception $e) {
+        throw $e;   
+    }   
+
+    # store payment instrument id
+    bitcoin_setting('payment_instrument_id', $result['values'][0]['value']);
 
 }
 
